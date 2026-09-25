@@ -63,7 +63,7 @@
         <div class="sched-body" style="--c:${esc(colorFor(lesson?.classId || cls?.id, course?.id))}">
           <span class="sched-class">${esc(cls?.name || course?.short || '')}<small class="muted" style="display:block;font-weight:500">${esc(p.name)}${cls && p.room ? ` · ${esc(p.room)}` : ''}${clash ? ' · <span class="overdue-text">clash</span>' : ''}</small></span>
           ${lesson
-            ? `<button class="sched-lesson" data-lesson="${lesson.id}"><i class="dot tone-${st.tone}"></i><span>${esc(lesson.title)}</span></button>${badge(st.label, st.tone)}`
+            ? `<button class="sched-lesson" data-lesson="${lesson.id}"><i class="dot tone-${st.tone}"></i><span>${esc(lesson.title)}</span></button>${filesBadge(lesson.id, 'inline')}${badge(st.label, st.tone)}`
             : `<span class="faint small" style="flex:1">No plan yet</span><button class="btn btn-sm btn-soft" data-plan="${p.id}" data-class="${cls?.id || ''}">+ Plan lesson</button>`}
         </div></li>`;
     }).map((html, i) => ({ t: busy[i].start, html }));

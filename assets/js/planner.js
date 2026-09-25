@@ -21,7 +21,7 @@
     const clash = p.classId && taught.some(o => o !== p && timesOverlap(o, p));
     const st = lesson ? LESSON_STATUS[lesson.status] || LESSON_STATUS.planned : null;
     return `<div class="slot" style="--c:${esc(colorFor(lesson?.classId || cls?.id, course?.id))}" ${data}>
-      <div class="slot-top"><span class="slot-time">${esc(p.start)}–${esc(p.end)}</span><span class="slot-div">${esc(p.name)}</span></div>
+      <div class="slot-top"><span class="slot-time">${esc(p.start)}–${esc(p.end)}</span><span class="slot-div">${esc(p.name)} ${filesBadge(lesson?.id, 'inline')}</span></div>
       <div class="slot-class">${esc(cls?.name || course?.short || '')}${clash ? ' <span class="overdue-text small">⚠ clash</span>' : ''}</div>
       ${cls && p.room ? `<div class="tl-room"><span class="slot-room">📍 ${esc(p.room)}</span></div>` : ''}
       ${lesson ? `<div class="slot-title">${esc(lesson.title)}</div>${badge(st.label, st.tone)}` : '<div class="slot-empty">Not planned</div>'}
@@ -47,7 +47,7 @@
   }
   function dayFooter(date, loose) {
     return `${loose.map(l => { const c = App.course(l.courseId); return `<div class="slot" style="--c:${esc(colorFor(l.classId, l.courseId))}" data-lesson="${l.id}" tabindex="0" role="button">
-        <div class="slot-top"><span class="slot-time">No fixed period</span></div><div class="slot-class">${esc(App.cls(l.classId)?.name || c?.short || '')}</div><div class="slot-title">${esc(l.title)}</div></div>`; }).join('')}
+        <div class="slot-top"><span class="slot-time">No fixed period</span>${filesBadge(l.id, 'inline')}</div><div class="slot-class">${esc(App.cls(l.classId)?.name || c?.short || '')}</div><div class="slot-title">${esc(l.title)}</div></div>`; }).join('')}
       <div class="day-add-row"><button class="btn btn-sm btn-ghost day-add" data-add="${date}">+ Lesson</button><button class="btn btn-sm btn-ghost day-add" data-add-event="${date}">+ Event</button></div>
       <textarea class="day-note" data-note="${date}" aria-label="Notes for ${esc(fmtDate(date))}" placeholder="Notes…">${esc(S.notes[date] || '')}</textarea>`;
   }
@@ -125,6 +125,7 @@
     if (h < 34) {
       return `<div class="slot tl-block micro ${clash ? 'clash' : ''} ${lesson ? '' : 'unplanned'}" style="--c:${esc(colorFor(lesson?.classId || cls?.id, course?.id))};${pos}" ${data} title="${esc(tip)}">
         <div class="tl-micro"><span class="slot-time">${esc(p.start)}<span class="micro-end">–${esc(p.end)}</span></span> <span class="slot-class">${esc(cls?.name || course?.short || '')}</span>${room ? ` <span class="micro-loc">📍 ${esc(room)}</span>` : ''} <span>${lesson ? esc(lesson.title) : 'Not planned'}</span></div>
+        ${filesBadge(lesson?.id)}
       </div>`;
     }
     const tiny = h < 58;
@@ -134,7 +135,7 @@
       <div class="tl-line"><span class="slot-time">${esc(p.start)}</span> <span class="slot-class">${esc(cls?.name || course?.short || '')}</span> <span class="slot-div">${esc(p.name)}</span></div>
       ${room && !tiny ? `<div class="tl-room"><span class="slot-room">📍 ${esc(room)}</span></div>` : ''}
       <div class="tl-title">${room && tiny ? `<span class="slot-room">📍 ${esc(room)}</span> ` : ''}${lesson ? `<i class="dot tone-${st.tone}"></i> ${esc(lesson.title)}` : '<span class="slot-empty">Not planned</span>'}</div>
-      ${endTag}
+      ${endTag}${filesBadge(lesson?.id)}
     </div>`;
   }
 
@@ -309,6 +310,7 @@
   });
   grid.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('[data-files-lesson]')) return; // the 📎 button handles its own Enter/Space
     const ev = e.target.closest('[data-event]');
     if (ev) { e.preventDefault(); openEvent(ev); return; }
     const slot = e.target.closest('.slot');

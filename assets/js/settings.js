@@ -254,7 +254,9 @@
   /* ---------- backup ---------- */
   function storageInfo() {
     let size = 0; try { size = (localStorage.getItem(STORE_KEY) || '').length; } catch (e) { /* ignore */ }
-    $('#storageInfo').textContent = `${S.lessons.length} lessons · ${S.assessments.length} assessments · ${S.teachers.length} teachers · ${S.worksheets.length} saved worksheets · about ${Math.max(1, Math.round(size / 1024))} KB used (browsers allow about 5 MB).`;
+    const files = (S.aiResults || []).flatMap(r => r.files || []);
+    $('#storageInfo').textContent = `${S.lessons.length} lessons · ${S.assessments.length} assessments · ${S.teachers.length} teachers · ${S.worksheets.length} saved worksheets · about ${Math.max(1, Math.round(size / 1024))} KB used (browsers allow about 5 MB).` +
+      (files.length ? ` Also ${files.length} file(s) from Claude (${fmtBytes(files.reduce((s, f) => s + f.size, 0))}) in the browser’s file storage — these are not included in the backup file, so keep your own copies.` : '');
   }
   $('#exportBtn').onclick = () => { downloadFile(`mathhub-backup-${isoDate()}.json`, JSON.stringify(S, null, 2)); toast('Backup downloaded', 'success'); };
   $('#importBtn').onclick = () => $('#importFile').click();

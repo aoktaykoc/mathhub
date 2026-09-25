@@ -21,6 +21,42 @@ function linkify(text) {
   return esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 }
 
+/* ---------- small Markdown renderer (for AI answers pasted back into the site) ----------
+   Headings, bold/italic, inline code, bullet and numbered lists, tables, rules, paragraphs.
+   Text is escaped first, so pasted content can never inject HTML. */
+function mdToHtml(md) {
+  const lines = String(md || '').replace(/\r\n?/g, '\n').split('\n');
+  let html = '', list = null, para = [], table = [];
+  const inline = s => esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>');
+  const flushPara = () => { if (para.length) { html += `<p>${para.map(inline).join('<br>')}</p>`; para = []; } };
+  const flushList = () => { if (list) { html += `<${list.type}>${list.items.map(i => `<li>${inline(i)}</li>`).join('')}</${list.type}>`; list = null; } };
+  const flushTable = () => {
+    if (!table.length) return;
+    const rows = table.filter(r => !/^\|?\s*:?-{2,}/.test(r)).map(r => r.replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+    html += `<div class="md-table"><table>${rows.map((r, i) => `<tr>${r.map(c => i ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join('')}</tr>`).join('')}</table></div>`;
+    table = [];
+  };
+  const flush = () => { flushPara(); flushList(); flushTable(); };
+  lines.forEach(line => {
+    const t = line.trim();
+    let m;
+    if (!t) { flush(); return; }
+    if (/^\|.*\|$/.test(t)) { flushPara(); flushList(); table.push(t); return; }
+    flushTable();
+    if ((m = t.match(/^(#{1,4})\s+(.*)$/))) { flush(); const lv = Math.min(m[1].length + 1, 5); html += `<h${lv}>${inline(m[2])}</h${lv}>`; return; }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) { flush(); html += '<hr>'; return; }
+    if ((m = t.match(/^[-*•]\s+(.*)$/))) { flushPara(); if (list?.type !== 'ul') { flushList(); list = { type: 'ul', items: [] }; } list.items.push(m[1]); return; }
+    if ((m = t.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list?.type !== 'ol') { flushList(); list = { type: 'ol', items: [] }; } list.items.push(m[1]); return; }
+    flushList();
+    para.push(t);
+  });
+  flush();
+  return html;
+}
+
 /* ---------- dates (local time, ISO yyyy-mm-dd strings) ---------- */
 function isoDate(d = new Date()) {
   const z = n => String(n).padStart(2, '0');
@@ -229,6 +265,7 @@ function seedState() {
     cycle: { enabled: false, anchor: '' },
     rooms: {}, // same keys as timetable → room for that period (overrides the class default)
     events: [], // { id, title, date, start, end, location, repeat, days, until, skip, color, notes }
+    aiResults: [], // { id, lessonId, templateId, templateName, result, createdAt } — answers pasted back from Claude
     lessons: [],
     tasks: [
       { id: uid('task'), text: 'Enter my timetable in Settings', done: false, due: today, priority: 'high' },
@@ -359,6 +396,9 @@ const ICONS = {
   compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   save: '<path d="M5 3h11l5 5v13H5z"/><path d="M8 3v6h8M8 21v-7h8v7"/>',
+  wand: '<path d="M15 4V2M15 10V8M11 6h2M17 6h2"/><path d="M3 21l11-11"/><path d="M13 7l4 4"/>',
+  library: '<path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="M16.5 4.5l3.5 1-4 15-3.5-1z"/>',
+  sparkle: '<path d="M11 3l1.8 4.7L17.5 9.5l-4.7 1.8L11 16l-1.8-4.7L4.5 9.5l4.7-1.8z"/><path d="M19 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
 };
 function icon(name) {
   return `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -446,10 +486,119 @@ async function copyText(text) {
 }
 function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'file'; }
 
+function downloadBlob(filename, blob) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function fmtBytes(n) { return n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`; }
+function fileIcon(name) {
+  const ext = String(name).split('.').pop().toLowerCase();
+  return { pdf: '📕', pptx: '📊', ppt: '📊', key: '📊', tex: '📐', docx: '📝', doc: '📝', md: '📝', txt: '📝', xlsx: '📗', csv: '📗', zip: '🗜️', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', svg: '🖼️' }[ext] || '📎';
+}
+
+/* ---------- file store (IndexedDB) — for PDFs, slides and other files too big for localStorage ---------- */
+const FileStore = {
+  _db: null,
+  open() {
+    if (this._db) return Promise.resolve(this._db);
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) { reject(new Error('This browser cannot store files')); return; }
+      const req = indexedDB.open('mathhub-files', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('files');
+      req.onsuccess = () => { this._db = req.result; resolve(this._db); };
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction('files', mode);
+      const req = fn(t.objectStore('files'));
+      t.oncomplete = () => resolve(req?.result);
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error || new Error('Storage transaction aborted'));
+    });
+  },
+  put(id, blob) { return this.run('readwrite', s => s.put(blob, id)); },
+  get(id) { return this.run('readonly', s => s.get(id)); },
+  del(id) { return this.run('readwrite', s => s.delete(id)); },
+};
+// Open a stored file: PDFs, images and text in a new tab; everything else downloads.
+async function openStoredFile(meta, forceDownload = false) {
+  let blob;
+  try { blob = await FileStore.get(meta.id); } catch (e) { blob = null; }
+  if (!blob) { toast(`“${meta.name}” is not in this browser’s storage (it may have been saved on another computer or browser).`, 'error'); return; }
+  const ext = meta.name.split('.').pop().toLowerCase();
+  const textLike = ['tex', 'md', 'txt', 'csv', 'json', 'sty', 'bib'].includes(ext);
+  const viewable = textLike || /^(application\/pdf|image\/)/.test(blob.type) || ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext);
+  if (forceDownload || !viewable) { downloadBlob(meta.name, blob); return; }
+  const view = textLike ? new Blob([blob], { type: 'text/plain;charset=utf-8' }) : (ext === 'pdf' && !blob.type ? new Blob([blob], { type: 'application/pdf' }) : blob);
+  const url = URL.createObjectURL(view);
+  if (!window.open(url, '_blank')) downloadBlob(meta.name, blob);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/* ---------- files attached to a lesson (uploaded in the AI content studio) ---------- */
+function lessonFiles(lessonId) {
+  if (!lessonId) return [];
+  return (App.state.aiResults || []).filter(r => r.lessonId === lessonId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .flatMap(r => (r.files || []).map(f => ({ ...f, resultId: r.id })));
+}
+// Small 📎 badge for lesson blocks; clicking it opens the file list (handled by a delegated listener below).
+function filesBadge(lessonId, extraClass = '') {
+  const n = lessonFiles(lessonId).length;
+  return n ? `<button type="button" class="files-badge ${extraClass}" data-files-lesson="${esc(lessonId)}" title="${n} file${n > 1 ? 's' : ''} — click to open" aria-label="${n} attached file${n > 1 ? 's' : ''}">📎${n}</button>` : '';
+}
+function fileRowsHtml(files) {
+  return `<ul class="file-list">${files.map(f => `<li>
+    <span class="file-name">${fileIcon(f.name)} ${esc(f.name)}</span><span class="small muted">${fmtBytes(f.size)}</span>
+    <button type="button" class="btn btn-sm btn-soft" data-file-open="${esc(f.id)}">Open</button>
+    <button type="button" class="btn btn-sm btn-ghost" data-file-download="${esc(f.id)}">Download</button></li>`).join('')}</ul>`;
+}
+// Clicks on any data-file-open / data-file-download button, anywhere on the page.
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-file-open], [data-file-download]');
+  if (!o) return;
+  e.stopPropagation();
+  const id = o.dataset.fileOpen || o.dataset.fileDownload;
+  const meta = (App.state.aiResults || []).flatMap(r => r.files || []).find(f => f.id === id);
+  if (meta) openStoredFile(meta, !!o.dataset.fileDownload);
+}, true);
+function openLessonFiles(lessonId) {
+  const l = App.state.lessons.find(x => x.id === lessonId);
+  const files = lessonFiles(lessonId);
+  const p = l && App.periodOn(l.periodId, l.date);
+  openModal({
+    title: `Files — ${l ? l.title : 'lesson'}`,
+    body: `<p class="muted small" style="margin-top:0">${esc([l && fmtDate(l.date, { weekday: 'long', day: 'numeric', month: 'long' }), p && p.name, App.cls(l?.classId)?.name].filter(Boolean).join(' · '))}</p>
+      ${files.length ? fileRowsHtml(files) : '<p class="muted">No files attached to this lesson yet.</p>'}`,
+    actions: [
+      { label: 'Add or manage files', cls: 'btn-ghost', onClick: () => { location.href = `ai.html?lesson=${encodeURIComponent(lessonId)}`; } },
+      { label: 'Open lesson plan', cls: 'btn-ghost', onClick: () => { if (l) openLessonEditor(l, () => location.reload()); } },
+      { label: 'Close', cls: 'btn-primary' },
+    ],
+  });
+}
+// Badge clicks open the file list instead of the lesson block underneath.
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-files-lesson]');
+  if (!b) return;
+  e.stopPropagation();
+  e.preventDefault();
+  openLessonFiles(b.dataset.filesLesson);
+}, true);
+
 const PRINT_CSS = `body{font-family:"Segoe UI",Arial,sans-serif;color:#111;margin:24px;font-size:13px;line-height:1.5}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.05em;color:#444}
 .meta{color:#555;margin-bottom:12px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 8px;vertical-align:top;text-align:left}
-th{background:#f0f0f0}.pre{white-space:pre-wrap}.box{border:1px solid #bbb;border-radius:6px;padding:8px 10px;margin-bottom:8px}`;
+th{background:#f0f0f0}.pre{white-space:pre-wrap}.box{border:1px solid #bbb;border-radius:6px;padding:8px 10px;margin-bottom:8px}
+.md h2,.md h3,.md h4,.md h5{text-transform:none;letter-spacing:0;color:#111;margin:12px 0 4px}.md h2{font-size:16px}.md h3{font-size:14px}.md h4,.md h5{font-size:13px}
+.md table{margin:6px 0}.md ul,.md ol{margin:4px 0 8px;padding-left:22px}.md p{margin:4px 0 8px}code{background:#f2f2f2;padding:0 3px;border-radius:3px}`;
 function printHTML(title, html) {
   const w = window.open('', '_blank');
   if (!w) { toast('Allow pop-ups for this page to print', 'error'); return; }
@@ -463,6 +612,8 @@ function lessonDefaults(extra = {}) {
     id: null, date: isoDate(), periodId: '', classId: '', courseId: '', unitId: '', title: '',
     objectives: '', criteria: [], starter: '', main: '', plenary: '', homework: '', differentiation: '',
     resources: '', status: 'planned', reflection: '',
+    duration: '',      // minutes
+    curriculum: null,  // { level, topicId, outcomeIds, custom } when built from the curriculum library
   }, extra);
 }
 
@@ -490,6 +641,10 @@ function openLessonEditor(lesson, onSaved) {
       ${ta('differentiation', 'Differentiation, ATL & support', 2)}
       ${ta('resources', 'Resources & links', 2, 'Worksheets, slides, GDC files, links…')}
       <label>Status<select data-f="status">${Object.entries(LESSON_STATUS).map(([k, v]) => opt(k, v.label, L.status)).join('')}</select></label>
+      <label>Duration (minutes)<input type="number" min="5" max="600" step="5" data-f="duration" value="${esc(L.duration)}" placeholder="e.g. 40"></label>
+      ${L.id && lessonFiles(L.id).length ? `<div class="span-2"><label style="margin-bottom:.2rem">📎 Files</label>${fileRowsHtml(lessonFiles(L.id))}</div>` : ''}
+      ${L.id ? `<p class="span-2 small muted" style="margin:0">🤖 ${(S.aiResults || []).filter(r => r.lessonId === L.id).length} AI content result(s) saved · <a href="ai.html?lesson=${esc(L.id)}">Create content or add files →</a></p>` : ''}
+      ${L.curriculum && L.id ? `<p class="span-2 small muted" style="margin:0">📚 Linked to the curriculum: ${esc(typeof levelLabel === 'function' ? levelLabel(L.curriculum.level) : '')} · ${(L.curriculum.outcomeIds || []).length} outcome(s). <a href="builder.html?lesson=${esc(L.id)}">Change topic &amp; outcomes in the Lesson builder →</a></p>` : ''}
       <label class="span-2">Reflection (after teaching)<textarea data-f="reflection" rows="2" placeholder="What worked? What to change next time?">${esc(L.reflection)}</textarea></label>
     </div>`;
 
@@ -577,11 +732,15 @@ function printLesson(L) {
   const row = (label, v) => v ? `<h2>${esc(label)}</h2><div class="box pre">${esc(v)}</div>` : '';
   printHTML(L.title, `<h1>${esc(L.title)}</h1>
     <div class="meta">${esc(fmtDate(L.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}
-    ${period ? ` · ${esc(periodText(period))}` : ''}${cls ? ` · ${esc(cls.name)}` : ''}${room ? ` · Room ${esc(room)}` : ''}<br>
+    ${period ? ` · ${esc(periodText(period))}` : ''}${cls ? ` · ${esc(cls.name)}` : ''}${room ? ` · Room ${esc(room)}` : ''}${L.duration ? ` · ${esc(L.duration)} min` : ''}<br>
     ${esc(course?.name || '')}${unit ? ` — ${esc(unit.title)}` : ''}${L.criteria?.length ? ` · Criteria: ${esc(L.criteria.join(', '))}` : ''}</div>
     ${row('Objectives / success criteria', L.objectives)}${row('Starter', L.starter)}${row('Main activities', L.main)}
     ${row('Plenary / exit ticket', L.plenary)}${row('Homework', L.homework)}${row('Differentiation & ATL', L.differentiation)}
-    ${row('Resources', L.resources)}${row('Reflection', L.reflection)}`);
+    ${row('Resources', L.resources)}${row('Reflection', L.reflection)}
+    ${(() => { const r = (App.state.aiResults || []).filter(x => x.lessonId === L.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const files = (App.state.aiResults || []).filter(x => x.lessonId === L.id).flatMap(x => x.files || []);
+      return (r && r.result ? `<h2>Lesson content (${esc(r.templateName || 'AI')})</h2><div class="box md">${mdToHtml(r.result)}</div>` : '') +
+        (files.length ? `<h2>Files</h2><div class="box">${files.map(f => `${fileIcon(f.name)} ${esc(f.name)} <span style="color:#777">(${fmtBytes(f.size)})</span>`).join('<br>')}</div>` : ''); })()}`);
 }
 
 /* ---------- event editor (shared by planner and dashboard) ---------- */
@@ -789,7 +948,10 @@ function renderSidebar() {
     { title: 'Teaching', items: [
       { id: 'dashboard', href: 'index.html', label: 'Dashboard', icon: 'home' },
       { id: 'planner', href: 'planner.html', label: 'Weekly planner', icon: 'calendar' },
+      { id: 'builder', href: 'builder.html', label: 'Lesson builder', icon: 'wand' },
       { id: 'lessons', href: 'lessons.html', label: 'Lesson plans', icon: 'book' },
+      { id: 'ai', href: 'ai.html', label: 'AI content studio', icon: 'sparkle' },
+      { id: 'curriculum', href: 'curriculum.html', label: 'Curriculum library', icon: 'library' },
       { id: 'courses', href: 'courses.html', label: 'Courses & units', icon: 'layers' },
       { id: 'worksheets', href: 'worksheets.html', label: 'Worksheet generator', icon: 'sheet' },
     ] },

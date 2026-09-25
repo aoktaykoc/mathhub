@@ -47,6 +47,7 @@
             <button class="btn btn-sm btn-ghost" data-act="edit" data-id="${l.id}">Edit</button>
             <button class="btn btn-sm btn-ghost" data-act="dup" data-id="${l.id}">Duplicate</button>
             <button class="btn btn-sm btn-ghost" data-act="print" data-id="${l.id}">Print</button>
+            <a class="btn btn-sm btn-ghost" href="ai.html?lesson=${l.id}" title="Create lesson content with Claude">🤖 AI${(S.aiResults || []).some(r => r.lessonId === l.id) ? ' ✓' : ''}</a>
             ${l.status !== 'taught' ? `<button class="btn btn-sm btn-soft" data-act="taught" data-id="${l.id}">Mark taught</button>` : ''}
           </div></article>`;
       }).join('')}</section>`).join('');
