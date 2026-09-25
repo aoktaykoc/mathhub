@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson builder · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="builder">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1 id="pageTitle">Lesson builder</h1>
+        <p class="muted">Pick the level and topic, tick the learning outcomes, set the time. The lesson goes straight into your planner.</p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="curriculum.html">Curriculum library</a>
+        <button class="btn btn-ghost" id="newBtn">New lesson</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="bl-layout">
+        <div class="stack">
+          <section class="card">
+            <h2 class="bl-step"><span>1</span> Class &amp; level</h2>
+            <div class="form-grid">
+              <label>Class<select id="fClass"></select></label>
+              <label>Curriculum level<select id="fLevel"></select></label>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head" style="margin-bottom:.6rem">
+              <h2 class="bl-step"><span>2</span> Topic</h2>
+              <input type="search" id="fSearch" placeholder="Search topics and outcomes…" aria-label="Search topics and outcomes" style="max-width:260px">
+            </div>
+            <div class="form-grid" style="margin-bottom:.6rem">
+              <label class="span-2">Unit / strand<select id="fUnit"></select></label>
+            </div>
+            <div id="topicPick" class="topic-pick"></div>
+          </section>
+
+          <section class="card">
+            <h2 class="bl-step"><span>3</span> Lesson details</h2>
+            <div class="form-grid">
+              <label class="span-2">Lesson topic<input id="fTitle" placeholder="e.g. Solving quadratic equations by factorising"></label>
+              <label>Date<input type="date" id="fDate"></label>
+              <label>Period<select id="fPeriod"></select></label>
+              <div class="span-2" id="nextSlot"></div>
+              <label>Duration (minutes)<input type="number" id="fDuration" min="5" max="600" step="5" placeholder="e.g. 40"></label>
+              <div><label style="margin-bottom:.3rem">Quick pick</label><div class="chip-group" id="durChips"></div></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head" style="margin-bottom:.5rem">
+              <h2 class="bl-step"><span>4</span> Learning outcomes</h2>
+              <span class="small"><button class="link" id="selAllOut">All</button> · <button class="link" id="selNoneOut">None</button></span>
+            </div>
+            <div id="outcomes"></div>
+            <label style="margin-top:.8rem">Your own outcomes (one per line)
+              <textarea id="fCustom" rows="3" placeholder="Students will be able to…"></textarea></label>
+          </section>
+
+          <section class="card">
+            <h2 class="bl-step"><span>5</span> Lesson outline <span class="muted small" style="font-weight:500">(optional)</span></h2>
+            <textarea id="fOutline" rows="4" placeholder="Starter, main activities, plenary… You can add more detail later in the full lesson plan."></textarea>
+            <div class="form-row" style="justify-content:flex-end;margin-top:1rem">
+              <button class="btn btn-ghost" id="saveAi" style="flex:0">Save &amp; create content with Claude</button>
+              <button class="btn btn-ghost" id="saveOpen" style="flex:0">Save &amp; open full plan</button>
+              <button class="btn btn-primary" id="saveBtn" style="flex:0">Save lesson</button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack bl-side">
+          <section class="card">
+            <h2 style="margin-bottom:.6rem">Preview</h2>
+            <div id="preview"></div>
+          </section>
+          <section class="card">
+            <div class="card-head" style="margin-bottom:.5rem"><h2>Outcome coverage</h2><a class="link" href="curriculum.html" id="covLink">Library →</a></div>
+            <div id="coverage"></div>
+          </section>
+          <section class="card">
+            <h2 style="margin-bottom:.4rem">Recently built</h2>
+            <div id="recent"></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/curricula.js"></script>
+<script src="assets/js/builder.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI content studio · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="ai">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>AI content studio</h1>
+        <p class="muted">Your prompt + the lesson’s details → copy to Claude → paste the answer back and keep it with the lesson</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="manageTpl">Prompt templates</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="bl-layout">
+        <div class="stack">
+          <section class="card">
+            <h2 class="bl-step"><span>1</span> Lesson</h2>
+            <div class="form-grid">
+              <label class="span-2">Lesson plan<select id="fLesson"></select></label>
+              <label>Lesson topic<input data-v="topic"></label>
+              <label>Class<input data-v="class"></label>
+              <label>Level<input data-v="level"></label>
+              <label>Unit<input data-v="unit"></label>
+              <label>Topic code<input data-v="code" placeholder="e.g. SL 2.6"></label>
+              <label>Minutes per lesson<input data-v="duration" type="number" min="5" step="5"></label>
+              <label>Number of lessons<input data-v="lessons" type="number" min="1" max="20" value="1"></label>
+              <label>Homework time (minutes, optional)<input data-v="homework" placeholder="default 20–30"></label>
+              <label class="span-2">Learning outcomes (one per line)<textarea data-v="outcomes" rows="4"></textarea></label>
+              <label class="span-2">Prior knowledge or diagnostic gaps (optional)<textarea data-v="prior" rows="2" placeholder="e.g. Many students still confuse −3² and (−3)²; weak fraction arithmetic"></textarea></label>
+              <label class="span-2">Current lesson outline<textarea data-v="outline" rows="2"></textarea></label>
+              <label class="span-2">Additional notes for Claude<textarea data-v="extra" rows="2" placeholder="e.g. Class has 18 students, 3 EAL learners; include a GDC activity"></textarea></label>
+            </div>
+            <p class="muted small" style="margin:.6rem 0 0">Changes here only affect the prompt; they do not change the lesson plan.</p>
+          </section>
+
+          <section class="card">
+            <div class="card-head" style="margin-bottom:.6rem">
+              <h2 class="bl-step"><span>2</span> Prompt</h2>
+              <select id="fTemplate" aria-label="Prompt template" style="max-width:280px"></select>
+            </div>
+            <div id="missing"></div>
+            <textarea id="promptOut" rows="14" readonly aria-label="Prompt to send to Claude"></textarea>
+            <div class="form-row" style="margin-top:.7rem;align-items:center">
+              <span class="small muted" id="promptInfo"></span>
+              <span class="grow"></span>
+              <button class="btn btn-ghost" id="copyPrompt" style="flex:0">Copy prompt</button>
+              <button class="btn btn-primary" id="copyOpen" style="flex:0">Copy &amp; open Claude</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head" style="margin-bottom:.6rem">
+              <h2 class="bl-step"><span>3</span> Claude’s answer &amp; files</h2>
+              <div class="seg" id="viewSeg" role="group" aria-label="View">
+                <button type="button" data-view="edit" class="active">Paste / edit</button>
+                <button type="button" data-view="preview">Preview</button>
+              </div>
+            </div>
+            <textarea id="result" rows="14" placeholder="Paste Claude’s answer here (Ctrl+V)…"></textarea>
+            <div id="resultPreview" class="md-view" hidden></div>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Add files from Claude">
+              <input type="file" id="fileInput" multiple hidden>
+              <div class="dz-icon" aria-hidden="true">⬆</div>
+              <div><strong>Drop Claude’s files here</strong> or <span class="link">choose files</span></div>
+              <div class="small muted">PDF, PowerPoint, LaTeX (.tex), Word, images… — kept with the lesson in this browser</div>
+            </div>
+            <ul class="file-list" id="pending"></ul>
+            <div class="form-row" style="margin-top:.7rem;justify-content:flex-end">
+              <button class="btn btn-ghost" id="clearResult" style="flex:0">Clear</button>
+              <button class="btn btn-primary" id="saveResult" style="flex:0">Save to lesson</button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack bl-side">
+          <section class="card">
+            <h2 style="margin-bottom:.5rem">How it works</h2>
+            <ol class="steps" style="margin:0">
+              <li>Choose a lesson plan (or type the details).</li>
+              <li>Pick a prompt template and click <strong>Copy &amp; open Claude</strong>.</li>
+              <li>In Claude press <strong>Ctrl+V</strong> and send.</li>
+              <li>Copy Claude’s answer into step 3 and drop the files Claude made (PDF, PPTX, .tex…) into the box, then click <strong>Save to lesson</strong>.</li>
+            </ol>
+          </section>
+          <section class="card">
+            <h2 style="margin-bottom:.4rem">Saved for this lesson</h2>
+            <div id="saved"></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/curricula.js"></script>
+<script src="assets/js/prompts.js"></script>
+<script src="assets/js/ai.js"></script>
+</body>
+</html>

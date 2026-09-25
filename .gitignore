@@ -1,0 +1,4 @@
+# Personal working files — not part of the website
+*.docx
+*.xlsx
+~$*
