@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Submit an assessment · Maths department</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="submit">
+<div class="plain-page">
+  <header class="plain-head">
+    <span class="brand-mark">∑</span>
+    <div><h1>Submit an assessment for review</h1><p class="muted" style="margin:0">Mathematics department · formative & summative assessments</p></div>
+  </header>
+
+  <section class="card" style="margin-bottom:1rem">
+    <ol class="steps">
+      <li>Upload your assessment and mark scheme to Google Drive / OneDrive and copy the share links (viewer or commenter access).</li>
+      <li>Complete the form below and tick the self-check.</li>
+      <li>Click <strong>Create submission file</strong> and email the downloaded <em>.json</em> file to your subject lead. You can also paste the ready-made email text.</li>
+    </ol>
+  </section>
+
+  <form id="form" class="card" novalidate>
+    <div class="form-grid">
+      <label>Your name *<input name="name" required autocomplete="name"></label>
+      <label>Your email<input name="email" type="email" autocomplete="email"></label>
+      <label class="span-2">Assessment title *<input name="title" required placeholder="e.g. Unit 2 summative — Algebraic thinking"></label>
+      <label>Course *<select name="courseId" id="course" required></select></label>
+      <label>Type *<select name="type"><option value="formative">Formative</option><option value="summative">Summative</option></select></label>
+      <label class="span-2">Unit / topic<input name="unit" list="unitList"><datalist id="unitList"></datalist></label>
+      <div class="span-2" id="critWrap"></div>
+      <label>Date students sit it<input name="date" type="date"></label>
+      <label>Duration<input name="duration" placeholder="e.g. 50 minutes"></label>
+      <label>Total marks<input name="marks" placeholder="e.g. 40"></label>
+      <label>Request code (if you have one)<input name="requestCode" placeholder="REQ-XXXX" style="text-transform:uppercase"></label>
+      <label class="span-2">Assessment document link *<input name="link" type="url" required placeholder="https://drive.google.com/…"></label>
+      <label class="span-2">Mark scheme / rubric link<input name="markschemeLink" type="url" placeholder="https://…"></label>
+      <label class="span-2">Notes for the reviewer<textarea name="notes" rows="3" placeholder="Differentiation, accommodations, anything you want feedback on…"></textarea></label>
+      <div class="span-2">
+        <label style="margin-bottom:.4rem">Self-check before submitting</label>
+        <ul class="checklist" id="selfCheck"></ul>
+      </div>
+    </div>
+    <p class="muted small" id="dueNote"></p>
+    <div class="form-row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-primary" type="submit" style="flex:0">Create submission file</button>
+    </div>
+  </form>
+
+  <section id="done" class="success-box" hidden style="margin-top:1rem">
+    <h2 style="margin-bottom:.4rem">Your submission file is ready ✓</h2>
+    <p class="small">A file named <strong id="fileName"></strong> was downloaded. Attach it to an email to your subject lead. If the download was blocked, click “Download again”.</p>
+    <div class="form-row">
+      <button class="btn btn-ghost" id="again" style="flex:0">Download again</button>
+      <button class="btn btn-ghost" id="copyEmail" style="flex:0">Copy email text</button>
+    </div>
+  </section>
+  <p class="muted small" style="text-align:center;margin-top:2rem">Your name and email are remembered in this browser only.</p>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/submit.js"></script>
+</body>
+</html>

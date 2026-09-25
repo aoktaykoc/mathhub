@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings & backup · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="settings">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Settings & backup</h1>
+        <p class="muted">Profile, school week, divisions & bell times, classes, timetable and data</p>
+      </div>
+    </header>
+    <main class="content stack">
+      <div class="grid-2">
+        <section class="card" id="profile">
+          <h2 style="margin-bottom:.8rem">Profile</h2>
+          <div class="form-grid">
+            <label>Your name<input id="pName" placeholder="e.g. Emir"></label>
+            <label>School<input id="pSchool"></label>
+            <label class="span-2">Role<input id="pRole"></label>
+          </div>
+        </section>
+        <section class="card" id="week">
+          <h2 style="margin-bottom:.3rem">School week & day types</h2>
+          <p class="muted small">Choose the bell schedule each day follows (e.g. Tuesday is different).</p>
+          <div class="form-grid">
+            <label class="span-2">School week
+              <select id="workWeek"><option value="sun-thu">Sunday – Thursday</option><option value="mon-fri">Monday – Friday</option></select>
+            </label>
+            <label>Name of day type 1<input id="vnStd"></label>
+            <label>Name of day type 2<input id="vnAlt"></label>
+          </div>
+          <div class="table-wrap" style="margin-top:.8rem"><table class="table" id="dayTypes"></table></div>
+        </section>
+      </div>
+
+      <section class="card" id="cycle">
+        <div class="card-head"><div><h2>Two-week cycle</h2><p class="muted small">Use this if your timetable alternates between Week 1 and Week 2. Bell times are the same in both weeks; only the classes change.</p></div></div>
+        <div class="form-row" style="align-items:center">
+          <label class="inline" style="flex:0 0 auto"><input type="checkbox" id="cycleOn"> Use a Week 1 / Week 2 timetable</label>
+          <label style="flex:0 1 240px">A date in Week 1<input type="date" id="cycleAnchor"></label>
+          <div style="flex:1 1 260px" class="small" id="cycleInfo"></div>
+        </div>
+        <div class="form-row" style="justify-content:flex-start;margin-top:.7rem" id="cycleTools">
+          <button class="btn btn-sm btn-ghost" id="swapWeeks" style="flex:0">This week should be the other week</button>
+          <button class="btn btn-sm btn-ghost" id="copyW1" style="flex:0">Copy Week 1 timetable → Week 2</button>
+        </div>
+      </section>
+
+      <section class="card" id="bells">
+        <div class="card-head"><div><h2>Divisions & bell times</h2><p class="muted small">Each division has its own periods. Period names such as “P3” link the timetable to the bell times.</p></div>
+          <button class="btn btn-sm btn-soft" id="addDivision">+ Division</button></div>
+        <div id="bellList" class="stack"></div>
+      </section>
+
+      <section class="card" id="classes">
+        <div class="card-head"><div><h2>Classes / teaching groups</h2><p class="muted small">Name, usual room, course, and the division whose bells it follows. If a class meets somewhere else in some periods, type that room in the timetable cell below.</p></div><button class="btn btn-sm btn-soft" id="addClass">+ Class</button></div>
+        <div class="row-list" id="classList"></div>
+      </section>
+
+      <section class="card" id="timetable">
+        <div class="card-head"><div><h2>Weekly timetable</h2><p class="muted small">Choose the class you teach in each period. A dash means that period does not exist on that day. Changes save automatically.</p></div><button class="btn btn-sm btn-ghost" id="clearTT">Clear timetable</button></div>
+        <div class="tabs" id="ttWeekTabs" role="tablist" hidden>
+          <button class="tab active" data-ttweek="1">Week 1</button>
+          <button class="tab" data-ttweek="2">Week 2</button>
+        </div>
+        <div id="ttWrap" class="stack"></div>
+      </section>
+
+      <section class="card" id="backup">
+        <h2 style="margin-bottom:.4rem">Backup & data</h2>
+        <p class="muted small">All MathHub data is stored in this browser on this computer. Export a backup regularly, for example into this OneDrive folder, and import it to move to another computer or browser.</p>
+        <div class="form-row" style="justify-content:flex-start">
+          <button class="btn btn-primary" id="exportBtn" style="flex:0">Export backup</button>
+          <button class="btn btn-ghost" id="importBtn" style="flex:0">Import backup…</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+          <button class="btn btn-ghost" id="sampleBtn" style="flex:0">Load sample data</button>
+          <button class="btn btn-ghost" id="resetBells" style="flex:0">Restore default bell times</button>
+          <button class="btn btn-danger-ghost" id="resetBtn" style="flex:0">Reset everything</button>
+        </div>
+        <p class="muted small" id="storageInfo" style="margin:.8rem 0 0"></p>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/settings.js"></script>
+</body>
+</html>

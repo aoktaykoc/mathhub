@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="dashboard">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1 id="greeting">Welcome</h1>
+        <p class="muted" id="todayLabel"></p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="worksheets.html">Worksheet</a>
+        <button class="btn btn-ghost" id="qaTask">+ Task</button>
+        <button class="btn btn-ghost" id="qaEvent">+ Event</button>
+        <button class="btn btn-primary" id="qaLesson">+ Lesson plan</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div id="onboarding"></div>
+      <section class="stats" id="stats"></section>
+
+      <div class="dash-grid">
+        <section class="card span-2">
+          <div class="card-head">
+            <div><h2 id="schedTitle">Today’s schedule</h2><p class="muted small" id="schedSub"></p></div>
+            <a class="link" href="planner.html">Open weekly planner →</a>
+          </div>
+          <div id="schedule"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>To-do</h2><button class="link" id="clearDone">Clear completed</button></div>
+          <form id="taskForm" class="task-form" autocomplete="off">
+            <input id="taskText" placeholder="Add a task… (Enter)" aria-label="New task">
+            <button class="btn btn-primary" type="submit">Add</button>
+            <div class="task-opts">
+              <input type="date" id="taskDue" aria-label="Due date">
+              <select id="taskPri" aria-label="Priority">
+                <option value="normal">Normal</option>
+                <option value="high">High priority</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </form>
+          <ul id="taskList" class="task-list"></ul>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Next 14 days</h2></div>
+          <div id="agenda"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Curriculum coverage</h2><a class="link" href="courses.html">Courses →</a></div>
+          <div id="progress" class="course-progress"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Notes for today</h2><span class="save-state" id="noteState"></span></div>
+          <textarea id="dayNote" class="note-area" placeholder="Reminders, things to photocopy, students to follow up with…"></textarea>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Subject lead · review queue</h2><a class="link" href="assessments.html">Hub →</a></div>
+          <div id="review"></div>
+        </section>
+
+        <section class="card span-2">
+          <div class="card-head"><h2>Quick tools</h2></div>
+          <div class="quick-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+            <a class="quick" href="worksheets.html"><strong>Generate a worksheet</strong><span>Random practice with an answer key</span></a>
+            <a class="quick" href="planner.html"><strong>Plan the week</strong><span>Timetable plus lesson plans</span></a>
+            <a class="quick" href="assessments.html"><strong>Request an assessment</strong><span>Ask teachers for their drafts</span></a>
+            <a class="quick" href="submit.html"><strong>Submission form</strong><span>The link you share with teachers</span></a>
+            <a class="quick" href="toolkit.html#grades"><strong>MYP grade calculator</strong><span>Criteria A–D → grade 1–7</span></a>
+            <a class="quick" href="toolkit.html#rubric"><strong>Rubric builder</strong><span>Task-specific clarifications</span></a>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>

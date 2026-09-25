@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IB toolkit · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="toolkit">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>IB toolkit</h1>
+        <p class="muted">Quick references and tools for MYP and DP mathematics. Check the official IB guides for exact wording.</p>
+      </div>
+    </header>
+    <main class="content">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="grades">MYP grade calculator</button>
+        <button class="tab" data-tab="rubric">Rubric builder</button>
+        <button class="tab" data-tab="terms">Command terms</button>
+        <button class="tab" data-tab="dp">DP AI SL & IA tracker</button>
+      </div>
+
+      <section data-panel="grades" class="grid-2">
+        <div class="card">
+          <h2 style="margin-bottom:.8rem">Criteria levels → MYP grade</h2>
+          <div class="grade-calc">
+            <label>A · Knowing<input type="number" min="0" max="8" value="0" data-crit="A"></label>
+            <label>B · Patterns<input type="number" min="0" max="8" value="0" data-crit="B"></label>
+            <label>C · Communicating<input type="number" min="0" max="8" value="0" data-crit="C"></label>
+            <label>D · Real-life<input type="number" min="0" max="8" value="0" data-crit="D"></label>
+          </div>
+          <div class="grade-out">
+            <div><div class="stat-label">Total</div><div class="stat-value" id="gTotal">0 / 32</div></div>
+            <div><div class="stat-label">MYP grade</div><div class="grade-big" id="gGrade">—</div></div>
+            <div class="muted small" id="gDesc" style="flex:1;min-width:180px"></div>
+          </div>
+          <div class="boundaries" id="gBounds"></div>
+        </div>
+        <div class="card">
+          <h2 style="margin-bottom:.6rem">Class quick-convert</h2>
+          <p class="muted small">Paste one student per line: <em>name, A, B, C, D</em>. Leave a criterion empty if it was not assessed.</p>
+          <textarea id="bulkIn" rows="7" placeholder="Ayla, 6, 7, 5, 6&#10;Kerem, 4, 5, 5, 3"></textarea>
+          <div class="table-wrap" style="margin-top:.7rem"><table class="table" id="bulkOut"></table></div>
+        </div>
+      </section>
+
+      <section data-panel="rubric" hidden>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="form-grid">
+            <label>Task title<input id="rTitle" placeholder="e.g. Designing a sustainable water tank"></label>
+            <label>Course<select id="rCourse"></select></label>
+            <div class="span-2"><label style="margin-bottom:.35rem">Criteria</label><div class="chip-group" id="rCrit"></div></div>
+          </div>
+          <div class="form-row" style="margin-top:.8rem"><button class="btn btn-primary" id="rBuild" style="flex:0">Build rubric</button><button class="btn btn-ghost" id="rPrint" style="flex:0">Print</button></div>
+        </div>
+        <div id="rubricOut"></div>
+      </section>
+
+      <section data-panel="terms" hidden>
+        <div class="toolbar"><input type="search" id="termQ" placeholder="Filter command terms…" aria-label="Filter command terms" style="max-width:320px"></div>
+        <div class="terms" id="terms"></div>
+      </section>
+
+      <section data-panel="dp" hidden class="grid-2">
+        <div class="stack">
+          <div class="card">
+            <h2 style="margin-bottom:.6rem">AI SL assessment outline</h2>
+            <div class="table-wrap"><table class="table">
+              <thead><tr><th>Component</th><th>Format</th><th class="num">Weight</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Paper 1</strong></td><td>90 min · technology allowed · short-response · 80 marks</td><td class="num">40%</td></tr>
+                <tr><td><strong>Paper 2</strong></td><td>90 min · technology allowed · extended-response · 80 marks</td><td class="num">40%</td></tr>
+                <tr><td><strong>Internal assessment</strong></td><td>Mathematical exploration · 12–20 pages · 20 marks</td><td class="num">20%</td></tr>
+              </tbody></table></div>
+          </div>
+          <div class="card">
+            <h2 style="margin-bottom:.6rem">IA criteria</h2>
+            <div class="table-wrap"><table class="table">
+              <thead><tr><th>Criterion</th><th>Focus</th><th class="num">Marks</th></tr></thead>
+              <tbody>
+                <tr><td>A · Presentation</td><td>Organisation, coherence, concision</td><td class="num">4</td></tr>
+                <tr><td>B · Mathematical communication</td><td>Notation, symbols, terminology, representations</td><td class="num">4</td></tr>
+                <tr><td>C · Personal engagement</td><td>Independent thinking, creativity, ownership</td><td class="num">3</td></tr>
+                <tr><td>D · Reflection</td><td>Critical review of process and results</td><td class="num">3</td></tr>
+                <tr><td>E · Use of mathematics</td><td>Relevance, correctness, depth of understanding</td><td class="num">6</td></tr>
+                <tr><td colspan="2"><strong>Total</strong></td><td class="num"><strong>20</strong></td></tr>
+              </tbody></table></div>
+            <p class="muted small" style="margin:.6rem 0 0">Check the current IB subject guide: DP mathematics courses are being revised.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h2>IA milestone tracker</h2><p class="muted small">Dates show on your dashboard agenda</p></div></div>
+          <div id="milestones"></div>
+          <form class="form-row" id="msAdd" style="margin-top:.7rem"><input name="label" placeholder="Add a milestone…"><input name="date" type="date" style="flex:0 0 150px"><button class="btn btn-soft" type="submit" style="flex:0">Add</button></form>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/toolkit.js"></script>
+</body>
+</html>

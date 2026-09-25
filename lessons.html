@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson plans · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="lessons">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Lesson plans</h1>
+        <p class="muted" id="summary"></p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="exportCsv">Export CSV</button>
+        <button class="btn btn-primary" id="newLesson">+ New lesson</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search titles, objectives…" aria-label="Search" style="min-width:220px">
+        <select id="fCourse" aria-label="Course"></select>
+        <select id="fStatus" aria-label="Status"></select>
+        <select id="fRange" aria-label="Date range">
+          <option value="upcoming">Upcoming</option>
+          <option value="week">This week</option>
+          <option value="past">Past</option>
+          <option value="all">All dates</option>
+        </select>
+      </div>
+      <div id="list"></div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/lessons.js"></script>
+</body>
+</html>

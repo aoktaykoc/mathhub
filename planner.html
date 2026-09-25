@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly planner · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="planner">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Weekly planner</h1>
+        <p class="muted" id="weekSummary"></p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="settings.html#timetable">Edit timetable</a>
+        <button class="btn btn-ghost" id="copyWeek">Copy to next week</button>
+        <button class="btn btn-ghost" id="printWeek">Print</button>
+        <button class="btn btn-primary" id="newEvent">+ Event</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="toolbar">
+        <div class="week-nav">
+          <button class="btn btn-ghost btn-sm" id="prevWeek" aria-label="Previous week">←</button>
+          <span class="week-label" id="weekLabel"></span>
+          <button class="btn btn-ghost btn-sm" id="nextWeek" aria-label="Next week">→</button>
+          <button class="btn btn-soft btn-sm" id="thisWeek">This week</button>
+        </div>
+        <span class="grow"></span>
+        <div class="seg" id="viewToggle" role="group" aria-label="View">
+          <button type="button" data-view="timeline">Timeline</button>
+          <button type="button" data-view="list">List</button>
+        </div>
+        <select id="fDivision" aria-label="Division"></select>
+        <label class="inline"><input type="checkbox" id="showFree"> Show free periods</label>
+      </div>
+      <div id="emptyTT"></div>
+      <div class="week-scroll"><div class="week-grid" id="weekGrid"></div></div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/planner.js"></script>
+</body>
+</html>

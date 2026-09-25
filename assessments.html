@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assessment hub · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="assessments">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Assessment hub</h1>
+        <p class="muted">Request, collect, review and approve formative and summative assessments from your department</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="teachersBtn">Teachers</button>
+        <button class="btn btn-ghost" id="importBtn">Import submissions</button>
+        <input type="file" id="importFile" accept=".json,application/json" multiple hidden>
+        <button class="btn btn-primary" id="newReq">+ Request assessment</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="status-bar" id="statusBar"></div>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search…" aria-label="Search assessments" style="min-width:200px">
+        <select id="fTeacher" aria-label="Teacher"></select>
+        <select id="fCourse" aria-label="Course"></select>
+        <select id="fType" aria-label="Type">
+          <option value="">Formative & summative</option>
+          <option value="formative">Formative</option>
+          <option value="summative">Summative</option>
+        </select>
+      </div>
+      <div class="table-wrap" style="margin-bottom:1.2rem">
+        <table class="table">
+          <thead><tr><th>Assessment</th><th>Teacher</th><th>Course</th><th>Type</th><th>Draft due</th><th>Sat on</th><th>Status</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head"><div><h2>Department overview</h2><p class="muted small">What each teacher owes you and what is already approved</p></div></div>
+          <div id="overview"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h2>Assessment calendar</h2><p class="muted small">Next 8 weeks. Flags weeks where one course has more than one summative</p></div></div>
+          <div id="calendar"></div>
+        </section>
+      </div>
+      <section class="card" style="margin-top:1rem">
+        <h2 style="margin-bottom:.5rem">How collecting assessments works</h2>
+        <ol class="steps">
+          <li>Add your teachers, then click <strong>Request assessment</strong>. You can send the same request to several teachers at once.</li>
+          <li>Open a request and click <strong>Copy request link</strong>, or use <strong>Copy reminder</strong> in the overview. Send it by email or Teams. The link opens the submission form already filled in.</li>
+          <li>The teacher fills in the <a href="submit.html">submission form</a> (document link, marks, criteria, self-check) and sends you the <em>.json</em> file it creates.</li>
+          <li>Click <strong>Import submissions</strong> and choose the files. They are matched to your requests automatically, then you review, give feedback and approve.</li>
+        </ol>
+        <p class="muted small" style="margin:0">Tip: keep this folder in a shared OneDrive/SharePoint folder so the submission link works for your teachers. Teachers keep the actual papers in Drive/OneDrive and share the link.</p>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/assessments.js"></script>
+</body>
+</html>

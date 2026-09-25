@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Courses & units · MathHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="courses">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Courses & units</h1>
+        <p class="muted">Unit plans, statements of inquiry and topic coverage for every course you teach</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="addCourse">+ Course</button>
+        <button class="btn btn-ghost" id="printCourse">Print overview</button>
+        <button class="btn btn-primary" id="addUnit">+ Unit</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="coursePanel"></div>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/courses.js"></script>
+</body>
+</html>
