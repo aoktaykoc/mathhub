@@ -81,8 +81,28 @@
 
   function show(html) {
     $('#sheets').innerHTML = html;
+    Tex.typeset($('#sheets'));
     $('#wsActions').hidden = false;
   }
+
+  // Click a typeset formula to edit its LaTeX, with a live preview.
+  $('#sheets').addEventListener('click', e => {
+    const f = e.target.closest('.kx');
+    if (!f) return;
+    openModal({
+      title: 'Edit formula',
+      body: `<label>LaTeX<textarea rows="3" data-tex spellcheck="false" style="font-family:monospace">${esc(f.dataset.tex)}</textarea></label>
+        <div class="sheet tex" data-preview style="padding:1rem;margin-top:.8rem;box-shadow:none;border:1px solid var(--border)"></div>`,
+      onOpen: dlg => {
+        const ta = $('[data-tex]', dlg), pv = $('[data-preview]', dlg);
+        const draw = () => { pv.innerHTML = Tex.render(ta.value, !!f.dataset.display); };
+        ta.addEventListener('input', draw);
+        draw();
+        ta.focus();
+      },
+      actions: [{ label: 'Cancel', cls: 'btn-ghost' }, { label: 'Apply', cls: 'btn-primary', onClick: dlg => { Tex.setFormula(f, $('[data-tex]', dlg).value.trim()); } }],
+    });
+  });
 
   function savePrefs() {
     prefs.courseId = $('#wsCourse').value;
@@ -125,10 +145,13 @@
   $('#printWs').onclick = () => doPrint('ws');
   $('#printBoth').onclick = () => doPrint('both');
   $('#printKey').onclick = () => doPrint('key');
+  const sheetTitle = () => $('.question-sheet h2')?.textContent.trim() || current?.title || 'Worksheet';
+  $('#texWs').onclick = () => { downloadFile(`${slug(sheetTitle())}.tex`, Tex.fromSheets($('#sheets')), 'application/x-tex'); toast('LaTeX file downloaded', 'success'); };
+  $('#copyTex').onclick = () => copyText(Tex.fromSheets($('#sheets')));
   $('#saveWs').onclick = () => {
-    const title = $('.question-sheet h2')?.textContent.trim() || current?.title || 'Worksheet';
+    const title = sheetTitle();
     S.worksheets = S.worksheets || [];
-    S.worksheets.unshift({ id: uid('ws'), title, courseId: current?.courseId || $('#wsCourse').value, createdAt: isoDate(), html: $('#sheets').innerHTML });
+    S.worksheets.unshift({ id: uid('ws'), title, courseId: current?.courseId || $('#wsCourse').value, createdAt: isoDate(), html: Tex.compact($('#sheets')) });
     S.worksheets = S.worksheets.slice(0, 25);
     if (App.save()) { toast('Worksheet saved', 'success'); renderRecent(); }
   };

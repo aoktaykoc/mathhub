@@ -593,6 +593,371 @@ document.addEventListener('click', e => {
   openLessonFiles(b.dataset.filesLesson);
 }, true);
 
+/* ---------- AI content studio: shared by ai.html and the lesson editor ---------- */
+// Values a template can use as {{name}}.
+const AI_PLACEHOLDERS = {
+  topic: 'Lesson topic', class: 'Class name', level: 'Curriculum level (e.g. DP AA · HL)', unit: 'Unit / strand',
+  code: 'Topic code (e.g. SL 2.6)', duration: 'Duration in minutes', date: 'Lesson date', outcomes: 'Learning outcomes (bulleted)',
+  outline: 'Current lesson outline', extra: 'Extra instructions typed on this page',
+  lessons: 'Number of lessons', prior: 'Prior knowledge / diagnostic gaps', homework: 'Available homework time',
+};
+const AI_DEFAULT_TEMPLATE = {
+  id: 'tpl-default',
+  name: 'Full lesson content (sample — replace with your prompt)',
+  text: `You are an experienced IB mathematics teacher. Create ready-to-teach lesson content.
+
+Class: {{class}}
+Level: {{level}}
+Unit: {{unit}}
+Topic: {{topic}} {{code}}
+Lesson length: {{duration}} minutes
+Learning outcomes — students will be able to:
+{{outcomes}}
+
+Current outline (may be empty):
+{{outline}}
+
+Extra instructions: {{extra}}
+
+Please produce, using Markdown headings:
+1. A 5-minute starter that activates prior knowledge
+2. Main activities with timings that add up to the lesson length
+3. Two worked examples with full solutions
+4. Differentiated practice questions (support / core / challenge) with answers
+5. An exit ticket that checks each learning outcome
+6. Notes on common misconceptions, ATL skills and differentiation`,
+};
+// Makes sure templates, results and prefs exist; returns prefs.
+function aiInit() {
+  const S = App.state;
+  if (!Array.isArray(S.aiTemplates) || !S.aiTemplates.length) S.aiTemplates = [{ ...AI_DEFAULT_TEMPLATE }];
+  S.aiResults = S.aiResults || [];
+  const prefs = S.aiPrefs || (S.aiPrefs = { templateId: S.aiTemplates[0].id });
+  // Add built-in prompts that are missing; drop the untouched sample once a real prompt exists.
+  (typeof BUILTIN_PROMPTS !== 'undefined' ? BUILTIN_PROMPTS : []).forEach(bp => {
+    const have = S.aiTemplates.find(t => t.id === bp.id);
+    // A newer built-in version replaces the stored one; a copy that differs is kept as "previous version".
+    if (have && (have.version || 1) < (bp.version || 1)) {
+      if (have.text !== bp.text) S.aiTemplates.push({ id: uid('tpl'), name: `${have.name} (previous version)`, text: have.text });
+      Object.assign(have, { name: bp.name, text: bp.text, version: bp.version });
+      App.save(true); // so the backup is made only once
+      return;
+    }
+    if (have) return;
+    S.aiTemplates.unshift({ ...bp });
+    const sample = S.aiTemplates.find(t => t.id === AI_DEFAULT_TEMPLATE.id);
+    if (sample && sample.text === AI_DEFAULT_TEMPLATE.text) S.aiTemplates = S.aiTemplates.filter(t => t !== sample);
+    if (!S.aiTemplates.some(t => t.id === prefs.templateId) || prefs.templateId === AI_DEFAULT_TEMPLATE.id) prefs.templateId = bp.id;
+  });
+  return prefs;
+}
+function aiTemplate() {
+  const prefs = aiInit();
+  return App.state.aiTemplates.find(t => t.id === prefs.templateId) || App.state.aiTemplates[0];
+}
+// Lesson (saved or being edited) → placeholder values.
+function aiLessonValues(l) {
+  const V = { topic: '', class: '', level: '', unit: '', code: '', duration: '', date: '', outcomes: '', outline: '' };
+  if (!l) return V;
+  const hit = l.curriculum?.topicId && typeof findTopic === 'function' ? findTopic(l.curriculum.topicId) : null;
+  V.topic = l.title || '';
+  V.class = App.cls(l.classId)?.name || '';
+  V.level = l.curriculum && typeof levelLabel === 'function' ? levelLabel(l.curriculum.level) : (App.course(l.courseId)?.name || '');
+  V.unit = hit?.unit.title || App.unit(l.courseId, l.unitId)?.title || '';
+  V.code = hit?.topic.code || '';
+  V.duration = l.duration || (() => { const p = App.periodOn(l.periodId, l.date); if (!p) return ''; const m = t => t.split(':').reduce((h, x) => h * 60 + Number(x)); return String(m(p.end) - m(p.start)); })();
+  V.date = l.date ? fmtDate(l.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  V.outcomes = (l.objectives || '').split('\n').map(s => s.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean).join('\n');
+  V.outline = [l.starter, l.main, l.plenary].filter(Boolean).join('\n');
+  return V;
+}
+function aiValueFor(V, key) {
+  const v = String(V[key] || '').trim();
+  if (key === 'outcomes') return v ? v.split('\n').map(s => `- ${s}`).join('\n') : '(not specified)';
+  if (key === 'code') return v ? `(${v})` : '';
+  if (key === 'lessons') return v || '1';
+  if (key === 'homework') return v ? (/^\d+$/.test(v) ? `${v} minutes` : v) : '(not specified — default 20–30 minutes)';
+  return v || '(not specified)';
+}
+// Template text + values → { out, used, unknown }.
+function aiBuildPrompt(text, V) {
+  const used = new Set(), unknown = new Set();
+  let out = text.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, k) => {
+    const key = k.toLowerCase();
+    if (key in AI_PLACEHOLDERS) { used.add(key); return aiValueFor(V, key); }
+    unknown.add(k); return m;
+  });
+  // A template without placeholders still gets the lesson details appended.
+  if (!used.size) {
+    const val = k => aiValueFor(V, k);
+    out += `\n\n---\nLesson details\nTopic: ${val('topic')} ${val('code')}\nClass: ${val('class')}\nLevel: ${val('level')}\nUnit: ${val('unit')}\nDuration: ${val('duration')} minutes\nLearning outcomes:\n${val('outcomes')}` +
+      (String(V.outline || '').trim() ? `\nCurrent outline:\n${V.outline.trim()}` : '') + (String(V.extra || '').trim() ? `\nExtra instructions: ${V.extra.trim()}` : '');
+  }
+  return { out, used, unknown };
+}
+// Store files in IndexedDB and return their metadata; removes what was stored if anything fails.
+async function aiStoreFiles(files) {
+  const metas = [];
+  try {
+    for (const file of files) {
+      const meta = { id: uid('f'), name: file.name, size: file.size, type: file.type || '' };
+      await FileStore.put(meta.id, file);
+      metas.push(meta);
+    }
+    navigator.storage?.persist?.(); // ask the browser not to clear these files when space is low
+    return metas;
+  } catch (e) {
+    for (const m of metas) { try { await FileStore.del(m.id); } catch (x) { /* ignore */ } }
+    throw e;
+  }
+}
+/* ---------- naming and filing a lesson's files: Grade 8_Unit_Topic_date_original.pdf ---------- */
+const cleanPart = (s, max = 50) => String(s || '').replace(/[\\/:*?"<>|#%]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max).trim();
+function lessonGradeLabel(l) {
+  const cls = App.cls(l.classId);
+  const c = App.course(l.courseId) || App.course(cls?.courseId);
+  const m = (c?.name || '').match(/Grade\s*\d+/i);
+  return m ? m[0].replace(/\s+/, ' ').replace(/^grade/i, 'Grade') : cleanPart(cls?.name || c?.short || c?.name || 'Lessons', 30);
+}
+// Folders under the chosen root: [grade, unit].
+function lessonFolderParts(l) {
+  const V = aiLessonValues(l);
+  return [lessonGradeLabel(l), cleanPart(V.unit) || 'No unit'];
+}
+function lessonFileName(l, original, n = 1) {
+  const V = aiLessonValues(l);
+  const dot = original.lastIndexOf('.');
+  const ext = dot > 0 ? original.slice(dot) : '';
+  const base = cleanPart(dot > 0 ? original.slice(0, dot) : original, 60) || 'file';
+  const parts = [lessonGradeLabel(l), cleanPart(V.unit), cleanPart(V.topic), l.date || '', base].filter(Boolean);
+  return `${parts.join('_')}${n > 1 ? ` (${n})` : ''}${ext}`;
+}
+
+const LESSON_FOLDER_KEY = '__lesson-folder__'; // directory handle kept in the file store
+const LessonFolder = {
+  supported: () => 'showDirectoryPicker' in window,
+  async handle() { try { return await FileStore.get(LESSON_FOLDER_KEY); } catch (e) { return null; } },
+  async pick() {
+    if (!this.supported()) { toast('Saving into a folder needs Chrome or Edge on a computer', 'error'); return null; }
+    let h;
+    try { h = await window.showDirectoryPicker({ id: 'mathhub-lessons', mode: 'readwrite' }); } catch (e) { return null; } // cancelled
+    try { await FileStore.put(LESSON_FOLDER_KEY, h); } catch (e) { toast('Could not remember this folder in this browser', 'error'); return null; }
+    aiInit().folderName = h.name; App.save(true);
+    $$('[data-folder-line]').forEach(el => { el.innerHTML = folderLineHtml(); });
+    toast(`Lesson files will be saved in “${h.name}”`, 'success');
+    return h;
+  },
+  async removePath(root, path) {
+    try {
+      const parts = path.split('/');
+      let dir = root;
+      for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+      await dir.removeEntry(parts[parts.length - 1]);
+    } catch (e) { /* already moved or deleted */ }
+  },
+  // Writes the files into <root>/<grade>/<unit>/; files already saved at the same path are skipped.
+  async write(l, files) {
+    const root = this.supported() ? await this.handle() : null;
+    if (!root) return { written: 0 };
+    let perm = await root.queryPermission({ mode: 'readwrite' });
+    if (perm === 'prompt') { try { perm = await root.requestPermission({ mode: 'readwrite' }); } catch (e) { /* needs a click */ } }
+    if (perm !== 'granted') return { written: 0, denied: true };
+    const parts = lessonFolderParts(l), path = parts.join('/');
+    let dir = root;
+    for (const p of parts) dir = await dir.getDirectoryHandle(p, { create: true });
+    let written = 0;
+    for (const f of files) {
+      const target = `${path}/${f.name}`;
+      if (f.savedPath === target) continue;
+      const blob = await FileStore.get(f.id).catch(() => null);
+      if (!blob) continue;
+      if (f.savedPath) await this.removePath(root, f.savedPath); // lesson renamed or moved since last time
+      const w = await (await dir.getFileHandle(f.name, { create: true })).createWritable();
+      await w.write(blob); await w.close();
+      f.savedPath = target; written++;
+    }
+    return { written, path: `${root.name}/${path}` };
+  },
+};
+function folderLineHtml() {
+  if (!LessonFolder.supported()) return '📁 Files are named Grade_Unit_Topic_date. Saving them straight into a folder on this computer needs Chrome or Edge.';
+  const name = App.state.aiPrefs?.folderName;
+  return name
+    ? `📁 Files are also saved in <strong>${esc(name)}</strong> / Grade / Unit when you save the lesson · <button type="button" class="link" data-folder-pick>Change folder</button>`
+    : `📁 <button type="button" class="link" data-folder-pick>Choose a folder</button> to also save the files on this computer, sorted into Grade / Unit subfolders.`;
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-folder-pick]')) LessonFolder.pick(); });
+
+// Renames a lesson's files after its grade, unit, topic and date, and saves them in the chosen folder.
+async function fileLessonMaterials(l) {
+  if (!l?.id) return;
+  const files = (App.state.aiResults || []).filter(r => r.lessonId === l.id).flatMap(r => r.files || []);
+  if (!files.length) return;
+  const used = new Set();
+  let renamed = 0;
+  for (const f of files) {
+    f.originalName = f.originalName || f.name;
+    let n = 1, name = lessonFileName(l, f.originalName);
+    while (used.has(name.toLowerCase())) name = lessonFileName(l, f.originalName, ++n);
+    used.add(name.toLowerCase());
+    if (f.name !== name) { f.name = name; renamed++; }
+  }
+  App.save(true);
+  let res = { written: 0 };
+  try { res = await LessonFolder.write(l, files); } catch (e) { toast(`Could not save the files in the folder: ${e.message || e}`, 'error'); }
+  App.save(true); // keeps savedPath
+  if (res.written) toast(`${res.written} file(s) saved in ${res.path}`, 'success');
+  else if (res.denied) toast('The folder was not saved — allow access to the folder when the browser asks', 'error');
+  else if (renamed) toast(`${renamed} file(s) renamed, e.g. “${files[0].name}”`, 'success');
+}
+
+async function copyPromptAndOpenClaude(text) {
+  await copyText(text);
+  window.open('https://claude.ai/new', '_blank', 'noopener');
+  toast('Prompt copied — in Claude press Ctrl+V and send', 'success');
+}
+
+// "AI content studio" panel inside the lesson editor.
+function lessonAiPanelHtml(L, isNew) {
+  const S = App.state;
+  const prefs = aiInit();
+  const results = S.aiResults.filter(r => r.lessonId === L.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const nFiles = results.reduce((s, r) => s + (r.files || []).length, 0);
+  return `<details class="span-2 ai-panel" data-ai ${nFiles ? 'open' : ''}>
+    <summary><span class="ai-panel-title">🤖 AI content studio</span>
+      <span class="small muted">${results.length ? `${results.length} saved result${results.length > 1 ? 's' : ''}${nFiles ? ` · 📎 ${nFiles} file${nFiles > 1 ? 's' : ''}` : ''}` : 'Generate slides, worksheets and notes with Claude'}</span></summary>
+    <div class="ai-panel-body">
+      <div class="form-row" style="align-items:flex-end">
+        <label class="grow">Prompt template<select data-ai-tpl>${S.aiTemplates.map(t => `<option value="${esc(t.id)}" ${t.id === prefs.templateId ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+        <label style="flex:0 0 7.5rem">Lessons<input data-ai-v="lessons" type="number" min="1" max="20" value="1"></label>
+      </div>
+      <label>Notes for Claude (optional)<textarea data-ai-v="extra" rows="2" placeholder="e.g. 18 students, 3 EAL learners; include a GDC activity"></textarea></label>
+      <p class="small muted" data-ai-info style="margin:.35rem 0 0"></p>
+      <div class="form-row" style="margin-top:.5rem;justify-content:flex-end">
+        <button type="button" class="btn btn-sm btn-ghost" data-ai-preview style="flex:0">Show prompt</button>
+        <button type="button" class="btn btn-sm btn-ghost" data-ai-copy style="flex:0">Copy prompt</button>
+        <button type="button" class="btn btn-sm btn-primary" data-ai-open style="flex:0">Copy &amp; open Claude</button>
+      </div>
+      <textarea data-ai-prompt rows="8" readonly hidden aria-label="Prompt to send to Claude" style="margin-top:.5rem"></textarea>
+      <hr class="ai-sep">
+      ${isNew ? '<p class="small muted" style="margin:0">Create the lesson first — then you can paste Claude’s answer and attach its files here.</p>' : `
+      <label>Claude’s answer<textarea data-ai-result rows="5" placeholder="Paste Claude’s answer here (Ctrl+V)…"></textarea></label>
+      <div class="dropzone" data-ai-drop tabindex="0" role="button" aria-label="Add files from Claude" style="padding:.7rem 1rem">
+        <input type="file" multiple hidden data-ai-file>
+        <div><strong>Drop Claude’s files here</strong> or <span class="link">choose files</span></div>
+        <div class="small muted">PDF, PowerPoint, LaTeX, Word, images… — kept with the lesson in this browser</div>
+      </div>
+      <ul class="file-list" data-ai-pending></ul>
+      <p class="small muted" data-ai-naming style="margin:0"></p>
+      <p class="small muted" data-folder-line style="margin:0">${folderLineHtml()}</p>
+      <div class="form-row" style="margin-top:.5rem;justify-content:flex-end">
+        <button type="button" class="btn btn-sm btn-primary" data-ai-save style="flex:0">Save to lesson</button>
+      </div>
+      <div data-ai-saved></div>`}
+      <p class="small muted" style="margin:.6rem 0 0">${L.id && !isNew ? `<a href="ai.html?lesson=${esc(L.id)}">Open the full AI content studio →</a>` : '<a href="ai.html">Open the full AI content studio →</a>'} (edit templates, prior knowledge, homework time…)</p>
+    </div>
+  </details>`;
+}
+
+// getLesson() returns the lesson as currently typed in the editor, so the prompt follows unsaved edits.
+function wireLessonAiPanel(dlg, L, getLesson) {
+  const S = App.state;
+  const box = $('[data-ai]', dlg);
+  if (!box) return;
+  const prefs = aiInit();
+  const q = sel => $(sel, box);
+  const extra = { lessons: '1', extra: '' };
+  const prompt = () => aiBuildPrompt(aiTemplate().text, { ...aiLessonValues(getLesson()), ...extra });
+  const refresh = () => {
+    const { out, unknown } = prompt();
+    q('[data-ai-prompt]').value = out;
+    q('[data-ai-info]').innerHTML = `${esc(out.length.toLocaleString())} characters · built from this lesson’s title, class, unit, objectives and outline` +
+      (unknown.size ? ` · <span style="color:var(--danger)">unknown placeholder(s): ${[...unknown].map(k => esc(`{{${k}}}`)).join(' ')}</span>` : '');
+    const naming = q('[data-ai-naming]');
+    if (naming) naming.textContent = `🏷️ Files are named like “${lessonFileName(getLesson(), 'Worksheet.pdf')}” when you save the lesson.`;
+  };
+  box.addEventListener('toggle', () => { if (box.open) refresh(); });
+  if (box.open) refresh();
+  dlg.addEventListener('input', e => { if (box.open && !e.target.closest('[data-ai-result]')) refresh(); });
+  dlg.addEventListener('change', () => { if (box.open) refresh(); });
+  $$('[data-ai-v]', box).forEach(el => el.addEventListener('input', () => { extra[el.dataset.aiV] = el.value; }));
+  q('[data-ai-tpl]').addEventListener('change', e => { prefs.templateId = e.target.value; App.save(true); });
+  q('[data-ai-preview]').addEventListener('click', e => {
+    const ta = q('[data-ai-prompt]'); refresh(); ta.hidden = !ta.hidden;
+    e.target.textContent = ta.hidden ? 'Show prompt' : 'Hide prompt';
+  });
+  q('[data-ai-copy]').addEventListener('click', () => copyText(prompt().out));
+  q('[data-ai-open]').addEventListener('click', () => copyPromptAndOpenClaude(prompt().out));
+  if (!q('[data-ai-save]')) return;
+
+  /* saved results for this lesson */
+  const renderSaved = () => {
+    const list = S.aiResults.filter(r => r.lessonId === L.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    q('[data-ai-saved]').innerHTML = list.length ? `<h4 style="margin:.9rem 0 .2rem">Saved for this lesson</h4><ul class="review-list">${list.map(r => {
+      const files = r.files || [];
+      return `<li><div class="grow"><strong>${esc(r.templateName || 'Result')}</strong>
+        <div class="muted small">${esc(new Date(r.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}${r.result ? ` · ${r.result.length.toLocaleString()} characters` : ''}</div>
+        ${files.length ? `<div class="file-chips">${files.map(f => `<button type="button" class="file-chip" data-file-open="${esc(f.id)}" title="Open ${esc(f.name)}">${fileIcon(f.name)} ${esc(f.name)}</button>`).join('')}</div>` : ''}</div>
+        ${r.result ? `<button type="button" class="btn btn-sm btn-ghost" data-ai-view="${esc(r.id)}">View</button>` : ''}</li>`;
+    }).join('')}</ul>` : '';
+  };
+  q('[data-ai-saved]').addEventListener('click', e => {
+    const b = e.target.closest('[data-ai-view]'); if (!b) return;
+    const r = S.aiResults.find(x => x.id === b.dataset.aiView);
+    if (r) openModal({ title: `${r.templateName || 'AI content'} — ${getLesson().title || 'lesson'}`, wide: true,
+      body: `<div class="md-view">${mdToHtml(r.result)}</div>`,
+      actions: [{ label: 'Copy', cls: 'btn-ghost', onClick: () => { copyText(r.result); return false; } }, 'spacer', { label: 'Close', cls: 'btn-primary' }] });
+  });
+
+  /* answer + files waiting to be saved */
+  let pending = [];
+  const renderPending = () => {
+    q('[data-ai-pending]').innerHTML = pending.map((f, i) => `<li><span class="file-name">${fileIcon(f.name)} ${esc(f.name)}</span>
+      <span class="small muted">${fmtBytes(f.size)}</span><button type="button" class="icon-btn sm" data-unpend="${i}" aria-label="Remove ${esc(f.name)}">×</button></li>`).join('');
+    q('[data-ai-save]').textContent = pending.length ? `Save to lesson (${pending.length} file${pending.length > 1 ? 's' : ''}, ${fmtBytes(pending.reduce((s, f) => s + f.size, 0))})` : 'Save to lesson';
+  };
+  const addPending = list => {
+    const files = [...list].filter(f => f.size > 0 && !pending.some(p => p.name === f.name && p.size === f.size));
+    const big = files.filter(f => f.size > 200 * 1048576);
+    if (big.length) toast(`Skipped ${big.map(f => f.name).join(', ')} — files over 200 MB are too large to keep in the browser`, 'error');
+    pending.push(...files.filter(f => f.size <= 200 * 1048576));
+    renderPending();
+  };
+  const dz = q('[data-ai-drop]');
+  dz.addEventListener('click', () => q('[data-ai-file]').click());
+  dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); q('[data-ai-file]').click(); } });
+  q('[data-ai-file]').addEventListener('click', e => e.stopPropagation());
+  q('[data-ai-file]').addEventListener('change', e => { addPending(e.target.files); e.target.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+  dz.addEventListener('drop', e => addPending(e.dataTransfer.files));
+  // a file dropped next to the drop zone should not replace the page
+  dlg.addEventListener('dragover', e => e.preventDefault());
+  dlg.addEventListener('drop', e => { if (!e.target.closest('[data-ai-drop]')) e.preventDefault(); });
+  q('[data-ai-pending]').addEventListener('click', e => { const b = e.target.closest('[data-unpend]'); if (!b) return; pending.splice(Number(b.dataset.unpend), 1); renderPending(); });
+
+  q('[data-ai-save]').addEventListener('click', async () => {
+    const ta = q('[data-ai-result]'), btn = q('[data-ai-save]');
+    const result = ta.value.trim();
+    if (!result && !pending.length) { toast('Paste Claude’s answer or add its files first', 'error'); ta.focus(); return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    let files = [];
+    try { files = await aiStoreFiles(pending); } catch (e) {
+      btn.disabled = false; renderPending();
+      toast(`Could not store the files: ${e.message || e}. The browser may be out of space.`, 'error');
+      return;
+    }
+    const t = aiTemplate();
+    S.aiResults.push({ id: uid('ai'), lessonId: L.id, templateId: t.id, templateName: t.name, result, files, createdAt: new Date().toISOString() });
+    btn.disabled = false;
+    if (!App.save()) { renderPending(); return; }
+    toast(`Saved to the lesson${files.length ? ` with ${files.length} file(s)` : ''}`, 'success');
+    ta.value = ''; pending = []; renderPending(); renderSaved();
+    if (files.length) { await fileLessonMaterials(S.lessons.find(x => x.id === L.id)); renderSaved(); }
+  });
+  renderSaved();
+}
+
 const PRINT_CSS = `body{font-family:"Segoe UI",Arial,sans-serif;color:#111;margin:24px;font-size:13px;line-height:1.5}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.05em;color:#444}
 .meta{color:#555;margin-bottom:12px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 8px;vertical-align:top;text-align:left}
@@ -642,8 +1007,7 @@ function openLessonEditor(lesson, onSaved) {
       ${ta('resources', 'Resources & links', 2, 'Worksheets, slides, GDC files, links…')}
       <label>Status<select data-f="status">${Object.entries(LESSON_STATUS).map(([k, v]) => opt(k, v.label, L.status)).join('')}</select></label>
       <label>Duration (minutes)<input type="number" min="5" max="600" step="5" data-f="duration" value="${esc(L.duration)}" placeholder="e.g. 40"></label>
-      ${L.id && lessonFiles(L.id).length ? `<div class="span-2"><label style="margin-bottom:.2rem">📎 Files</label>${fileRowsHtml(lessonFiles(L.id))}</div>` : ''}
-      ${L.id ? `<p class="span-2 small muted" style="margin:0">🤖 ${(S.aiResults || []).filter(r => r.lessonId === L.id).length} AI content result(s) saved · <a href="ai.html?lesson=${esc(L.id)}">Create content or add files →</a></p>` : ''}
+      ${lessonAiPanelHtml(L, isNew)}
       ${L.curriculum && L.id ? `<p class="span-2 small muted" style="margin:0">📚 Linked to the curriculum: ${esc(typeof levelLabel === 'function' ? levelLabel(L.curriculum.level) : '')} · ${(L.curriculum.outcomeIds || []).length} outcome(s). <a href="builder.html?lesson=${esc(L.id)}">Change topic &amp; outcomes in the Lesson builder →</a></p>` : ''}
       <label class="span-2">Reflection (after teaching)<textarea data-f="reflection" rows="2" placeholder="What worked? What to change next time?">${esc(L.reflection)}</textarea></label>
     </div>`;
@@ -669,7 +1033,19 @@ function openLessonEditor(lesson, onSaved) {
       },
     });
     actions.push({ label: 'Print', cls: 'btn-ghost', onClick: () => { printLesson(L); return false; } });
+    actions.push({ label: 'Use for another class', cls: 'btn-ghost', onClick: dlg => {
+      const cur = formLesson(dlg);
+      openReuseLesson(cur, () => onSaved && onSaved(S.lessons.find(l => l.id === L.id)));
+      return false;
+    } });
   }
+  // The lesson as currently typed, including unsaved edits.
+  const formLesson = dlg => {
+    const cur = { ...L };
+    $$('[data-f]', dlg).forEach(el => { cur[el.dataset.f] = el.value.trim(); });
+    cur.criteria = $$('[data-crit] input:checked', dlg).map(i => i.value);
+    return cur;
+  };
   actions.push('spacer', { label: 'Cancel', cls: 'btn-ghost' }, {
     label: isNew ? 'Create lesson' : 'Save changes', cls: 'btn-primary', onClick: dlg => {
       $$('[data-f]', dlg).forEach(el => { L[el.dataset.f] = el.value.trim(); });
@@ -679,6 +1055,7 @@ function openLessonEditor(lesson, onSaved) {
       if (isNew) { L.id = uid('L'); S.lessons.push(L); } else { S.lessons = S.lessons.map(l => l.id === L.id ? L : l); }
       App.save();
       toast(isNew ? 'Lesson created' : 'Lesson saved', 'success');
+      fileLessonMaterials(L);
       onSaved && onSaved(L);
     },
   });
@@ -717,7 +1094,101 @@ function openLessonEditor(lesson, onSaved) {
         const c = App.cls(e.target.value);
         if (c) { $('[data-f=courseId]', dlg).value = c.courseId; fillUnits(dlg, c.courseId, ''); }
       });
+      wireLessonAiPanel(dlg, L, () => formLesson(dlg));
       if (isNew) $('[data-f=title]', dlg).focus();
+    },
+  });
+}
+
+/* ---------- reuse a lesson plan for another class (e.g. 8A → 8C on another day / period) ---------- */
+// Timetabled periods of a class from `from` onwards: [{ date, p, taken }].
+function classSlots(classId, from, days = 28) {
+  const out = [];
+  for (let i = 0; i < days; i++) {
+    const d = addDays(from, i);
+    if (!isWorkDay(d)) continue;
+    periodsOn(d).forEach(p => {
+      if (classAt(d, p.id) === classId) out.push({ date: d, p, taken: App.state.lessons.find(l => l.date === d && l.periodId === p.id) });
+    });
+  }
+  return out;
+}
+// Deletes a stored file once no saved result refers to it any more (copied lessons share files).
+async function releaseStoredFile(id) {
+  if ((App.state.aiResults || []).some(r => (r.files || []).some(f => f.id === id))) return;
+  try { await FileStore.del(id); } catch (e) { /* already gone */ }
+}
+
+function openReuseLesson(src, onDone) {
+  const S = App.state;
+  const results = (S.aiResults || []).filter(r => r.lessonId === src.id);
+  const nFiles = results.reduce((s, r) => s + (r.files || []).length, 0);
+  const others = S.classes.filter(c => c.id !== src.classId);
+  if (!others.length) { toast('Add another class first (Settings → Classes)', 'error'); return; }
+  const srcCourse = src.courseId || App.cls(src.classId)?.courseId;
+  const first = others.find(c => c.courseId === srcCourse) || others[0];
+  const opt = (v, label, sel) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(label)}</option>`;
+  const from = src.date && src.date > isoDate() ? src.date : isoDate();
+  openModal({
+    title: `Use “${src.title || 'lesson'}” for another class`,
+    body: `<div class="form-grid">
+        <p class="span-2 small muted" style="margin:0">A copy of this plan is made for the class you choose. The original stays as it is.</p>
+        <label class="span-2">Class<select data-c>${others.map(c => opt(c.id, c.name, first.id)).join('')}</select></label>
+        <div class="span-2"><label style="margin-bottom:.35rem">Next lessons of this class in the timetable</label><div class="chip-group" data-slots></div></div>
+        <label>Date<input type="date" data-d></label>
+        <label>Period<select data-p></select></label>
+        ${results.length ? `<label class="span-2 chip-check" style="justify-self:start"><input type="checkbox" data-files checked> Also attach Claude’s content${nFiles ? ` and ${nFiles} file${nFiles > 1 ? 's' : ''}` : ''}</label>` : ''}
+      </div>`,
+    actions: [
+      { label: 'Cancel', cls: 'btn-ghost' },
+      { label: 'Create copy', cls: 'btn-primary', onClick: dlg => {
+        const classId = $('[data-c]', dlg).value, date = $('[data-d]', dlg).value, periodId = $('[data-p]', dlg).value;
+        if (!date) { toast('Please choose a date', 'error'); return false; }
+        const clash = periodId && S.lessons.find(l => l.date === date && l.periodId === periodId);
+        if (clash) { toast(`That period already has a lesson: “${clash.title}”`, 'error'); return false; }
+        const copy = { ...JSON.parse(JSON.stringify(src)), id: uid('L'), classId, date, periodId, status: 'planned', reflection: '', copiedFrom: src.id };
+        const cc = App.cls(classId)?.courseId;
+        if (cc && cc !== copy.courseId) { copy.courseId = cc; if (!App.unit(cc, copy.unitId)) copy.unitId = ''; }
+        S.lessons.push(copy);
+        if ($('[data-files]', dlg)?.checked) {
+          results.forEach(r => S.aiResults.push({ ...JSON.parse(JSON.stringify(r)), id: uid('ai'), lessonId: copy.id,
+            files: (r.files || []).map(f => { const { savedPath, ...rest } = f; return rest; }) })); // same stored file, own name and folder copy
+        }
+        if (!App.save()) return false;
+        const p = App.periodOn(periodId, date);
+        toast(`Copied to ${App.cls(classId)?.name || 'class'} · ${fmtDate(date, { weekday: 'short', day: 'numeric', month: 'short' })}${p ? ` · ${p.name}` : ''}`, 'success');
+        fileLessonMaterials(copy);
+        onDone && onDone(copy);
+      } },
+    ],
+    onOpen: dlg => {
+      const fillPeriods = (want = '') => {
+        const date = $('[data-d]', dlg).value, classId = $('[data-c]', dlg).value;
+        const ps = date ? periodsOn(date) : [];
+        const mine = want || ps.find(p => classAt(date, p.id) === classId)?.id || '';
+        $('[data-p]', dlg).innerHTML = opt('', '— no fixed period —', mine) + ps.map(p => {
+          const c = App.cls(classAt(date, p.id)), used = S.lessons.some(l => l.date === date && l.periodId === p.id);
+          return opt(p.id, `${p.name} · ${p.start}–${p.end}${c ? ` · ${c.name}` : ''}${used ? ' (has a lesson)' : ''}`, mine);
+        }).join('');
+      };
+      const fillSlots = () => {
+        const slots = classSlots($('[data-c]', dlg).value, from).slice(0, 10);
+        $('[data-slots]', dlg).innerHTML = slots.length ? slots.map(s => `<label class="chip-check"${s.taken ? ` title="Already planned: ${esc(s.taken.title)}"` : ''}>
+            <input type="radio" name="reuse-slot" value="${esc(s.date)}|${esc(s.p.id)}" ${s.taken ? 'disabled' : ''}>
+            ${esc(fmtDate(s.date, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${esc(s.p.name)}${s.taken ? ' ✓' : ''}</label>`).join('')
+          : '<span class="small muted">This class has no periods in the timetable for the next four weeks — choose a date and period below.</span>';
+        const free = $('[data-slots] input:not([disabled])', dlg);
+        if (free) { free.checked = true; free.dispatchEvent(new Event('change', { bubbles: true })); }
+        else { $('[data-d]', dlg).value = from; fillPeriods(); }
+      };
+      $('[data-slots]', dlg).addEventListener('change', e => {
+        const [d, p] = e.target.value.split('|');
+        $('[data-d]', dlg).value = d; fillPeriods(p);
+      });
+      $('[data-c]', dlg).addEventListener('change', fillSlots);
+      $('[data-d]', dlg).addEventListener('change', () => { $$('[data-slots] input', dlg).forEach(i => { i.checked = false; }); fillPeriods(); });
+      $('[data-p]', dlg).addEventListener('change', () => { $$('[data-slots] input', dlg).forEach(i => { i.checked = false; }); });
+      fillSlots();
     },
   });
 }

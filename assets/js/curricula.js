@@ -195,6 +195,145 @@ const AI_UNITS = [
   ]],
 ];
 
+/* ISL Grade 9 (MYP Year 4) syllabus, in the school's unit order.
+   Unit: [title, { weeks, assessment }, topics]
+   Topic: [code, title, MYP strand, lessons, tracks, [[outcome, lessons?], …]] — tracks [] = Standard & Extended */
+const MYP_STRANDS = ['Number', 'Algebra', 'Geometry & trigonometry', 'Statistics & probability'];
+const G9_UNITS = [
+  ['Unit 1 — All About Numbers; Solving the Unknown', { weeks: '7', assessment: 'Criteria A and D (possibly B and C)' }, [
+    ['1.1', 'Number systems', 'Number', 7, [], [
+      ['Identify and classify numbers as rational or irrational, and convert between forms (fractions, decimals, radicals)', 1],
+      ['Simplify radical expressions by performing operations with surds (add, subtract, multiply, divide), including higher-order roots', 3],
+      ['Apply and manipulate the laws of exponents for integer and fractional powers', 3]]],
+    ['1.2', 'Algebraic expressions', 'Algebra', 4, [], [
+      ['Simplify algebraic expressions using the distributive property and combining like terms', 2],
+      ['Expand polynomial products and factorise binomial and trinomial expressions with a common factor', 2]]],
+    ['1.3', 'Equations and inequalities', 'Algebra', 6, [], [
+      ['Solve single-variable linear equations, including those with decimals and simple algebraic fractions', 1],
+      ['Solve literal equations by isolating a variable in terms of other variables', 1],
+      ['Solve and graph linear inequalities on a number line', 1],
+      ['Solve systems of linear equations using substitution, elimination and graphical methods', 3]]],
+    ['1.E', 'Further equations and inequalities', 'Algebra', null, ['Extended'], [
+      ['Solve exponential equations using properties of exponents'],
+      ['Solve complex algebraic equations involving multiple steps, nested expressions or multiple variables'],
+      ['Solve linear and non-linear inequalities and represent solutions graphically or in interval notation'],
+      ['Solve absolute value equations and inequalities, including compound inequalities'],
+      ['Solve problems using linear programming']]],
+  ]],
+  ['Unit 2 — Let’s shape the world around us', { weeks: '6', assessment: 'Criteria A and B' }, [
+    ['2.1', 'Introduction to functions and function notation', 'Algebra', 3, [], [
+      ['Understand a function as a relation in which each input has exactly one output', 1],
+      ['Use and interpret function notation (e.g. f(x)) correctly', 1],
+      ['Distinguish between expressions, equations and functions', 1]]],
+    ['2.2', 'Domain and range', 'Algebra', 2, [], [
+      ['Determine the domain (possible inputs) and range (possible outputs) of linear and quadratic functions'],
+      ['Express domain and range in set notation or with inequalities'],
+      ['Analyse graphs to identify appropriate domain and range values based on context']]],
+    ['2.3', 'Evaluating functions at x = a', 'Algebra', 2, [], [
+      ['Substitute a given value into a function to find the output (e.g. evaluate f(3), f(x + 3))', 1],
+      ['Use function expressions to solve problems in real-world contexts', 1]]],
+    ['2.4', 'Graphing linear functions', 'Algebra', 2, [], [
+      ['Plot linear functions using slope–intercept form y = mx + b'],
+      ['Interpret the slope as a rate of change and the y-intercept as the starting value in context'],
+      ['Analyse the effects of changing m and b on the graph of a linear function']]],
+    ['2.5', 'Graphing quadratic functions', 'Algebra', 2, [], [
+      ['Identify and plot the key features of a quadratic function: vertex, axis of symmetry, x-intercepts (roots or zeros) and y-intercept'],
+      ['Sketch accurate parabolas from different forms (standard, vertex, factored)']]],
+    ['2.6', 'Moving between the three forms of quadratic functions', 'Algebra', 2, [], [
+      ['Convert from factored form and vertex form to standard form by expanding'],
+      ['Identify and interpret key features from each form (e.g. roots from factored form, vertex from vertex form)']]],
+    ['2.E1', 'Applying quadratic functions in real-life contexts', 'Algebra', 2, ['Extended'], [
+      ['Model real-world situations using quadratic functions (e.g. projectile motion, area problems, revenue optimisation)'],
+      ['Interpret the meaning of key features (vertex, axis of symmetry, x- and y-intercepts) in a real-life scenario'],
+      ['Use graphing calculator methods to solve application problems involving maximum and minimum values'],
+      ['Analyse and communicate solutions clearly with appropriate units and context']]],
+    ['2.E2', 'Transformations of functions', 'Algebra', null, ['Extended'], [
+      ['Identify and describe how vertical and horizontal shifts in a function’s equation affect its graph'],
+      ['Identify and describe how vertical and horizontal stretches or compressions affect a function’s graph']]],
+  ]],
+  ['Unit 3 — Shape and Space; Patterns in the World around us', { weeks: '8–9', assessment: 'Criterion B (scale factors for surface area and volume); Criterion D investigation practice' }, [
+    ['3.1', 'Polygon angle sum theorem', 'Geometry & trigonometry', 1, [], [
+      ['Apply the polygon angle sum theorem to find missing angles, including in regular polygons'],
+      ['Solve problems involving multiple triangles sharing angles or sides']]],
+    ['3.2', 'Understanding and applying angle relationships', 'Geometry & trigonometry', 1, [], [
+      ['Identify and apply the properties of angles formed by parallel lines cut by a transversal (alternate interior, corresponding, etc.)'],
+      ['Solve problems involving angle relationships in geometric figures']]],
+    ['3.3', 'Classifying and analysing quadrilaterals', 'Geometry & trigonometry', 1, [], [
+      ['Use properties of parallelograms, rectangles, rhombuses and trapezoids to find missing angles and sides'],
+      ['Classify quadrilaterals based on side lengths, angle measures and symmetry']]],
+    ['3.4', 'Applying the Pythagorean theorem', 'Geometry & trigonometry', 1, [], [
+      ['Use the Pythagorean theorem and its converse to verify right-angled triangles and find missing sides'],
+      ['Apply the theorem in real-world and coordinate geometry problems, including 3D']]],
+    ['3.5', 'Similarity', 'Geometry & trigonometry', null, [], [
+      ['Use scale factors and equal angles to identify and work with similar shapes'],
+      ['Recognise that two pairs of equal corresponding angles are enough for two triangles to be similar']]],
+    ['3.6', 'Coordinate geometry', 'Geometry & trigonometry', null, [], [
+      ['Calculate distances between points in the coordinate plane using the distance formula'],
+      ['Use coordinates to verify geometric properties and solve problems']]],
+    ['3.7', 'Composite 3D figures: surface area and volume', 'Geometry & trigonometry', null, [], [
+      ['Decompose complex shapes to calculate total area, perimeter, surface area and volume'],
+      ['Use known dimensions and formulae to find unknown sides or angles before finding area or perimeter']]],
+    ['3.8', 'Trigonometric problem solving', 'Geometry & trigonometry', null, [], [
+      ['Use sine, cosine and tangent ratios to find unknown sides or angles in right-angled triangles'],
+      ['Apply trigonometry to real-life measurement problems involving right-angled triangles and composite shapes']]],
+    ['3.9', 'Multi-step geometric reasoning', 'Geometry & trigonometry', null, [], [
+      ['Use logical steps and geometric relationships to solve problems that combine several skills (e.g. identifying shapes, using trigonometry and applying Pythagoras)']]],
+    ['3.E', 'Sine and cosine rules: missing sides and angles', 'Geometry & trigonometry', null, ['Extended'], [
+      ['Identify when to use the sine rule and the cosine rule from the given information (SAS, ASA, SSS, etc.)'],
+      ['Use the sine rule to find missing sides and angles in non-right-angled triangles'],
+      ['Use the cosine rule to find unknown sides or angles when two sides and the included angle, or all three sides, are known'],
+      ['Apply the sine and cosine rules accurately to word problems involving triangles']]],
+  ]],
+  ['Unit 4 — Fact or Fiction: What are the chances', { weeks: '9–10', assessment: 'Criteria C and D' }, [
+    ['4.1', 'Types of data', 'Statistics & probability', null, [], [
+      ['Distinguish between qualitative (categorical) and quantitative (numerical) data'],
+      ['Identify and compare primary and secondary data sources based on how the data were collected']]],
+    ['4.2', 'Organising and displaying data', 'Statistics & probability', null, [], [
+      ['Collect and organise data in frequency tables'],
+      ['Create and interpret dot plots for quantitative data and bar charts for categorical data'],
+      ['Create and interpret histograms for grouped quantitative data'],
+      ['Create and interpret pie charts to represent data as parts of a whole'],
+      ['Create and interpret stem-and-leaf plots that keep the actual data values']]],
+    ['4.3', 'Analysing data sets', 'Statistics & probability', null, [], [
+      ['Calculate and interpret measures of central tendency: mean, median and mode'],
+      ['Calculate and interpret measures of spread: range, interquartile range (IQR) and mean absolute deviation (MAD) as an introduction to standard deviation'],
+      ['Identify outliers in data sets and explain their effect on the mean and spread'],
+      ['Construct and interpret box-and-whisker plots']]],
+    ['4.4', 'Understanding probability concepts', 'Statistics & probability', null, [], [
+      ['Define and use probability terms such as event, outcome and sample space'],
+      ['Calculate theoretical probabilities of single events using fractions, decimals and percentages'],
+      ['Understand and calculate the probability of complementary events using P(A′) = 1 − P(A)']]],
+    ['4.5', 'Experimental (empirical) probability', 'Statistics & probability', null, [], [
+      ['Conduct experiments and record outcomes to estimate probabilities experimentally'],
+      ['Calculate relative frequency and compare it with theoretical probability'],
+      ['Interpret discrepancies between theoretical and experimental results']]],
+    ['4.6', 'Using diagrams to solve probability problems', 'Statistics & probability', null, [], [
+      ['Create and interpret Venn diagrams to show relationships between sets and calculate combined probabilities'],
+      ['Draw and use tree diagrams to represent multi-stage probability experiments'],
+      ['Use the multiplication and addition rules to find probabilities of compound events']]],
+    ['4.E', 'Conditional probability', 'Statistics & probability', null, ['Extended'], [
+      ['Understand conditional probability as the probability of an event given that another event has already occurred'],
+      ['Use the conditional probability formula to calculate P(A | B)'],
+      ['Interpret conditional probability in real-world contexts (e.g. medical testing, surveys, quality control)'],
+      ['Distinguish between independent and dependent events by checking whether P(A | B) = P(A)'],
+      ['Use two-way tables, Venn diagrams and tree diagrams to calculate and visualise conditional probabilities'],
+      ['Solve word problems involving conditional probability with clear reasoning and correct notation']]],
+  ]],
+];
+
+function buildMypUnits(cid, units) {
+  return units.map(([title, meta, topics], ui) => ({
+    id: `${cid}-u${ui + 1}`, title, hours: null, weeks: meta.weeks || '', assessment: meta.assessment || '',
+    topics: topics.map(([code, ttitle, strand, lessons, tracks, outcomes]) => {
+      const tid = `${cid}-${code.replace('.', '-')}`;
+      return {
+        id: tid, code, title: ttitle, strand, lessons: lessons || null, tracks,
+        outcomes: outcomes.map(([text, n], i) => ({ id: `${tid}-o${i + 1}`, text, tracks: [], lessons: n || null })),
+      };
+    }),
+  }));
+}
+
 // Deterministic ids, so lessons stay linked when the official content is restored.
 function buildUnits(cid, units) {
   return units.map(([title, hours, topics], ui) => ({
@@ -213,7 +352,7 @@ function builtinCurricula() {
   const source = 'IB Mathematics guide, first assessment 2021 (outcomes paraphrased)';
   return [
     { id: 'myp8', name: 'MYP Mathematics — Grade 8', short: 'MYP 8', programme: 'MYP', tracks: [], units: [] },
-    { id: 'myp9', name: 'MYP Mathematics — Grade 9', short: 'MYP 9', programme: 'MYP', tracks: ['Standard', 'Extended'], units: [] },
+    { id: 'myp9', name: 'MYP Mathematics — Grade 9 (MYP Year 4)', short: 'MYP 9', programme: 'MYP', tracks: ['Standard', 'Extended'], builtin: true, source: 'ISL Grade 9 Math Syllabus (updated)', units: buildMypUnits('myp9', G9_UNITS) },
     { id: 'myp10', name: 'MYP Mathematics — Grade 10', short: 'MYP 10', programme: 'MYP', tracks: ['Standard', 'Extended'], units: [] },
     { id: 'dp-aa', name: 'DP Mathematics: Analysis and Approaches', short: 'DP AA', programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-aa', AA_UNITS) },
     { id: 'dp-ai', name: 'DP Mathematics: Applications and Interpretation', short: 'DP AI', programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-ai', AI_UNITS) },
@@ -224,6 +363,17 @@ function builtinCurricula() {
 function ensureCurricula() {
   const S = App.state;
   if (!Array.isArray(S.curricula)) { S.curricula = builtinCurricula(); App.save(true); }
+  // New built-in content (e.g. the Grade 9 syllabus) fills curricula that are still empty; never overwrites your edits.
+  let changed = false;
+  builtinCurricula().forEach(b => {
+    const cur = S.curricula.find(c => c.id === b.id);
+    if (!cur) { if (b.builtin) { S.curricula.push(b); changed = true; } return; }
+    if (b.builtin && !cur.units.length && b.units.length) {
+      Object.assign(cur, { units: b.units, builtin: true, source: b.source, name: b.name, tracks: cur.tracks.length ? cur.tracks : b.tracks });
+      changed = true;
+    }
+  });
+  if (changed) App.save(true);
   S.classLevels = S.classLevels || {};
   return S.curricula;
 }
@@ -249,6 +399,9 @@ function levelTopics(key) {
 function findTopic(topicId) {
   for (const c of App.state.curricula || []) for (const u of c.units) for (const t of u.topics) if (t.id === topicId) return { c, unit: u, topic: t };
   return null;
+}
+function strandColor(strand) {
+  return { Number: '#2563eb', Algebra: '#9333ea', 'Geometry & trigonometry': '#059669', 'Statistics & probability': '#d97706' }[strand] || '#64748b';
 }
 function trackBadge(item, c) {
   if (!item.tracks?.length || !c || item.tracks.length >= c.tracks.length) return '';

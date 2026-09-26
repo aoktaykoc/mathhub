@@ -101,7 +101,7 @@
       const outs = topic.outcomes.filter(o => inTrack(o, track));
       const done = outs.filter(o => cov[o.id]).length;
       html += `<button type="button" class="tp ${topic.id === F.topicId ? 'active' : ''}" data-topic="${topic.id}">
-        ${topic.code ? `<span class="tp-code">${esc(topic.code)}</span>` : ''}<span class="tp-title">${esc(topic.title)}</span>
+        ${topic.code ? `<span class="tp-code">${esc(topic.code)}</span>` : ''}<span class="tp-title">${esc(topic.title)}${topic.strand ? ` <span class="strand-dot" style="--s:${strandColor(topic.strand)}" title="MYP strand: ${esc(topic.strand)}"></span>` : ''}</span>
         ${trackBadge(topic, c)}<span class="tp-cov ${outs.length && done === outs.length ? 'full' : ''}" title="Outcomes already in lesson plans">${done}/${outs.length}</span></button>`;
     });
     box.innerHTML = html;

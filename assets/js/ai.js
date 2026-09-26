@@ -3,51 +3,8 @@
   ensureCurricula();
   const params = new URLSearchParams(location.search);
 
-  // Values a template can use as {{name}}.
-  const PLACEHOLDERS = {
-    topic: 'Lesson topic', class: 'Class name', level: 'Curriculum level (e.g. DP AA · HL)', unit: 'Unit / strand',
-    code: 'Topic code (e.g. SL 2.6)', duration: 'Duration in minutes', date: 'Lesson date', outcomes: 'Learning outcomes (bulleted)',
-    outline: 'Current lesson outline', extra: 'Extra instructions typed on this page',
-    lessons: 'Number of lessons', prior: 'Prior knowledge / diagnostic gaps', homework: 'Available homework time',
-  };
-
-  const DEFAULT_TEMPLATE = {
-    id: 'tpl-default',
-    name: 'Full lesson content (sample — replace with your prompt)',
-    text: `You are an experienced IB mathematics teacher. Create ready-to-teach lesson content.
-
-Class: {{class}}
-Level: {{level}}
-Unit: {{unit}}
-Topic: {{topic}} {{code}}
-Lesson length: {{duration}} minutes
-Learning outcomes — students will be able to:
-{{outcomes}}
-
-Current outline (may be empty):
-{{outline}}
-
-Extra instructions: {{extra}}
-
-Please produce, using Markdown headings:
-1. A 5-minute starter that activates prior knowledge
-2. Main activities with timings that add up to the lesson length
-3. Two worked examples with full solutions
-4. Differentiated practice questions (support / core / challenge) with answers
-5. An exit ticket that checks each learning outcome
-6. Notes on common misconceptions, ATL skills and differentiation`,
-  };
-  if (!Array.isArray(S.aiTemplates) || !S.aiTemplates.length) S.aiTemplates = [DEFAULT_TEMPLATE];
-  S.aiResults = S.aiResults || [];
-  const prefs = S.aiPrefs || (S.aiPrefs = { templateId: S.aiTemplates[0].id });
-  // Add built-in prompts that are missing; drop the untouched sample once a real prompt exists.
-  (typeof BUILTIN_PROMPTS !== 'undefined' ? BUILTIN_PROMPTS : []).forEach(bp => {
-    if (S.aiTemplates.some(t => t.id === bp.id)) return;
-    S.aiTemplates.unshift({ ...bp });
-    const sample = S.aiTemplates.find(t => t.id === DEFAULT_TEMPLATE.id);
-    if (sample && sample.text === DEFAULT_TEMPLATE.text) S.aiTemplates = S.aiTemplates.filter(t => t !== sample);
-    if (!S.aiTemplates.some(t => t.id === prefs.templateId) || prefs.templateId === DEFAULT_TEMPLATE.id) prefs.templateId = bp.id;
-  });
+  const PLACEHOLDERS = AI_PLACEHOLDERS;
+  const prefs = aiInit();
   App.save(true);
 
   let lessonId = params.get('lesson') || '';
@@ -58,18 +15,7 @@ Please produce, using Markdown headings:
   function fillFromLesson() {
     const l = S.lessons.find(x => x.id === lessonId);
     Object.keys(V).forEach(k => { if (!KEEP.includes(k)) V[k] = ''; });
-    if (l) {
-      const hit = l.curriculum?.topicId ? findTopic(l.curriculum.topicId) : null;
-      V.topic = l.title || '';
-      V.class = App.cls(l.classId)?.name || '';
-      V.level = l.curriculum ? levelLabel(l.curriculum.level) : (App.course(l.courseId)?.name || '');
-      V.unit = hit?.unit.title || App.unit(l.courseId, l.unitId)?.title || '';
-      V.code = hit?.topic.code || '';
-      V.duration = l.duration || (() => { const p = App.periodOn(l.periodId, l.date); if (!p) return ''; const m = t => t.split(':').reduce((h, x) => h * 60 + Number(x)); return String(m(p.end) - m(p.start)); })();
-      V.date = l.date ? fmtDate(l.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
-      V.outcomes = (l.objectives || '').split('\n').map(s => s.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean).join('\n');
-      V.outline = [l.starter, l.main, l.plenary].filter(Boolean).join('\n');
-    }
+    Object.assign(V, aiLessonValues(l));
     $$('[data-v]').forEach(el => { el.value = V[el.dataset.v] || ''; });
   }
 
@@ -92,29 +38,7 @@ Please produce, using Markdown headings:
     $('#fTemplate').innerHTML = S.aiTemplates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
     $('#fTemplate').value = tpl().id;
   }
-  function valueFor(key) {
-    const v = (V[key] || '').trim();
-    if (key === 'outcomes') return v ? v.split('\n').map(s => `- ${s}`).join('\n') : '(not specified)';
-    if (key === 'code') return v ? `(${v})` : '';
-    if (key === 'lessons') return v || '1';
-    if (key === 'homework') return v ? (/^\d+$/.test(v) ? `${v} minutes` : v) : '(not specified — default 20–30 minutes)';
-    return v || '(not specified)';
-  }
-  function buildPrompt() {
-    const text = tpl().text;
-    const used = new Set(), unknown = new Set();
-    let out = text.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, k) => {
-      const key = k.toLowerCase();
-      if (key in PLACEHOLDERS) { used.add(key); return valueFor(key); }
-      unknown.add(k); return m;
-    });
-    // A template without placeholders still gets the lesson details appended.
-    if (!used.size) {
-      out += `\n\n---\nLesson details\nTopic: ${valueFor('topic')} ${valueFor('code')}\nClass: ${valueFor('class')}\nLevel: ${valueFor('level')}\nUnit: ${valueFor('unit')}\nDuration: ${valueFor('duration')} minutes\nLearning outcomes:\n${valueFor('outcomes')}` +
-        (V.outline.trim() ? `\nCurrent outline:\n${V.outline.trim()}` : '') + (V.extra.trim() ? `\nExtra instructions: ${V.extra.trim()}` : '');
-    }
-    return { out, used, unknown };
-  }
+  const buildPrompt = () => aiBuildPrompt(tpl().text, V);
   function renderPrompt() {
     const { out, used, unknown } = buildPrompt();
     $('#promptOut').value = out;
@@ -142,27 +66,12 @@ Please produce, using Markdown headings:
 
   async function deleteResult(id) {
     const r = S.aiResults.find(x => x.id === id);
-    for (const f of r?.files || []) { try { await FileStore.del(f.id); } catch (e) { /* already gone */ } }
     S.aiResults = S.aiResults.filter(x => x.id !== id);
+    for (const f of r?.files || []) await releaseStoredFile(f.id); // kept while a copied lesson still uses it
     App.save(); renderSaved(); fillLessonSelect();
   }
 
-  // Store files in IndexedDB and return their metadata; removes what was stored if anything fails.
-  async function storeFiles(files) {
-    const metas = [];
-    try {
-      for (const file of files) {
-        const meta = { id: uid('f'), name: file.name, size: file.size, type: file.type || '' };
-        await FileStore.put(meta.id, file);
-        metas.push(meta);
-      }
-      navigator.storage?.persist?.(); // ask the browser not to clear these files when space is low
-      return metas;
-    } catch (e) {
-      for (const m of metas) { try { await FileStore.del(m.id); } catch (x) { /* ignore */ } }
-      throw e;
-    }
-  }
+  const storeFiles = aiStoreFiles;
 
   function viewResult(r) {
     const l = S.lessons.find(x => x.id === r.lessonId);
@@ -195,8 +104,9 @@ Please produce, using Markdown headings:
           else if (b.dataset.download) openStoredFile(find(b.dataset.download), true);
           else if (b.dataset.remove) {
             const f = find(b.dataset.remove);
-            try { await FileStore.del(f.id); } catch (x) { /* ignore */ }
-            r.files = r.files.filter(x => x.id !== f.id); App.save(); refresh(); toast(`Removed ${f.name}`);
+            r.files = r.files.filter(x => x.id !== f.id);
+            await releaseStoredFile(f.id);
+            App.save(); refresh(); toast(`Removed ${f.name}`);
           } else if (b.hasAttribute('data-add-files')) $('[data-file-input]', dlg).click();
         });
         $('[data-file-input]', dlg).addEventListener('change', async e => {
@@ -205,7 +115,10 @@ Please produce, using Markdown headings:
           try {
             const metas = await storeFiles(files);
             r.files = [...(r.files || []), ...metas];
-            if (App.save()) { refresh(); toast(`${metas.length} file(s) added`, 'success'); }
+            if (App.save()) {
+              refresh(); toast(`${metas.length} file(s) added`, 'success');
+              if (l) { await fileLessonMaterials(l); refresh(); }
+            }
           } catch (x) { toast(`Could not store the file(s): ${x.message || x}`, 'error'); }
         });
       },
@@ -288,11 +201,7 @@ Please produce, using Markdown headings:
   $('#fTemplate').addEventListener('change', e => { prefs.templateId = e.target.value; App.save(true); renderPrompt(); });
   $('#manageTpl').onclick = manageTemplates;
   $('#copyPrompt').onclick = () => copyText($('#promptOut').value);
-  $('#copyOpen').onclick = async () => {
-    await copyText($('#promptOut').value);
-    window.open('https://claude.ai/new', '_blank', 'noopener');
-    toast('Prompt copied — in Claude press Ctrl+V and send', 'success');
-  };
+  $('#copyOpen').onclick = () => copyPromptAndOpenClaude($('#promptOut').value);
   $('#viewSeg').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
   $('#result').addEventListener('paste', () => setTimeout(() => { if ($('#result').value.trim()) setView('preview'); }, 50));
   /* ---------- files waiting to be saved ---------- */
@@ -341,6 +250,7 @@ Please produce, using Markdown headings:
     toast(`${l ? `Saved to “${l.title}”` : 'Saved (not linked to a lesson)'}${files.length ? ` with ${files.length} file(s)` : ''}`, 'success');
     $('#result').value = ''; pending = []; renderPending(); setView('edit');
     renderSaved(); fillLessonSelect();
+    if (l && files.length) { await fileLessonMaterials(l); renderSaved(); }
   };
   $('#saved').addEventListener('click', e => {
     const v = e.target.closest('[data-view-result]'), d = e.target.closest('[data-del-result]'), f = e.target.closest('[data-open-file]');
@@ -352,5 +262,6 @@ Please produce, using Markdown headings:
     }
   });
 
+  $$('[data-folder-line]').forEach(el => { el.innerHTML = folderLineHtml(); });
   fillLessonSelect(); fillTemplateSelect(); fillFromLesson(); renderPrompt(); renderSaved();
 })();

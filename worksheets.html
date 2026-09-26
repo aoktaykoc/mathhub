@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Worksheet generator · MathHub</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
   <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body data-page="worksheets">
@@ -54,7 +55,7 @@
               </label>
             </div>
             <label class="inline"><input type="checkbox" id="wsShuffle"> Shuffle all questions into one section</label>
-            <label>Your own questions (optional, one per line; add the answer after “||”)
+            <label>Your own questions (optional, one per line; add the answer after “||”; LaTeX typed as \( … \) goes into the .tex file unchanged)
               <textarea id="wsCustom" rows="3" placeholder="A phone costs $480 after a 20% discount. Find the original price. || $600"></textarea></label>
             <button class="btn btn-primary" id="generate">Generate worksheet</button>
           </section>
@@ -70,8 +71,10 @@
             <button class="btn btn-primary" id="printWs">Print worksheet</button>
             <button class="btn btn-ghost" id="printBoth">Print + answer key</button>
             <button class="btn btn-ghost" id="printKey">Answer key only</button>
+            <button class="btn btn-ghost" id="texWs" title="Worksheet and answer key as one .tex file (pdflatex / Overleaf)">LaTeX (.tex)</button>
+            <button class="btn btn-ghost" id="copyTex">Copy LaTeX</button>
             <button class="btn btn-ghost" id="saveWs">Save</button>
-            <span class="muted small">Click the sheet to edit the text.</span>
+            <span class="muted small">Click the sheet to edit the text; click a formula to edit its LaTeX. To get a PDF, choose “Save as PDF” in the print window.</span>
           </div>
           <div id="sheets"><div class="ws-empty">Choose topics on the left and click <strong>Generate worksheet</strong>.</div></div>
         </section>
@@ -81,6 +84,8 @@
 </div>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/generators.js"></script>
+<script src="assets/vendor/katex/katex.min.js"></script>
+<script src="assets/js/latex.js"></script>
 <script src="assets/js/worksheets.js"></script>
 </body>
 </html>

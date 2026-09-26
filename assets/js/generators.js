@@ -2,6 +2,7 @@
 /* ============================================================
    Worksheet question generators.
    Each generator: gen(level 1|2|3) → { q: html, a: html }.
+   Maths inside prose is wrapped in M() so the LaTeX export can typeset it.
    Level 1 = foundation, 2 = core, 3 = extension.
    ============================================================ */
 
@@ -14,6 +15,7 @@ const RNG = {
   shuffle: arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
 };
 const MINUS = '−';
+const M = s => `<span class="m">${s}</span>`; // marks maths for the LaTeX export
 const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
 
 /* ---------- formatting ---------- */
@@ -24,13 +26,13 @@ function roundTo(x, d) { const f = 10 ** d; return Math.round((x + Math.sign(x) 
 function fixed(x, d) { const r = roundTo(x, d); return (r < 0 ? MINUS : '') + Math.abs(r).toFixed(d); }
 function sf3(x) { const v = Number(x.toPrecision(3)); return num(v); }
 function money(x) { return Number(roundTo(x, 2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function sup(v, p) { return p === 1 ? v : `${v}<sup>${num(p)}</sup>`; }
+function sup(v, p) { return p === 1 ? v : M(`${v}<sup>${num(p)}</sup>`); }
 function fr(n, d) {
   if (d === 0) return 'undefined';
   if (d < 0) { n = -n; d = -d; }
   const g = gcd(n, d); n /= g; d /= g;
   if (d === 1) return num(n);
-  return `${n < 0 ? MINUS : ''}<span class="frac"><span>${Math.abs(n)}</span><span>${d}</span></span>`;
+  return M(`${n < 0 ? MINUS : ''}<span class="frac"><span>${Math.abs(n)}</span><span>${d}</span></span>`);
 }
 /* polynomial from [[coef, power], ...] */
 function poly(terms, v = 'x') {
@@ -41,26 +43,26 @@ function poly(terms, v = 'x') {
     const body = p === 0 ? coef : p === 1 ? `${coef}${v}` : `${coef}${v}<sup>${p}</sup>`;
     out += i === 0 ? (c < 0 ? MINUS : '') + body : (c < 0 ? ` ${MINUS} ` : ' + ') + body;
   });
-  return out || '0';
+  return M(out || '0');
 }
 const lin = (a, b, v = 'x') => poly([[a, 1], [b, 0]], v);
 function coefPrefix(k) { return k === 1 ? '' : k === -1 ? MINUS : num(k); }
 function lin2(a, b, c) { // ax + by = c
   const x = poly([[a, 1]], 'x');
   const y = b === 0 ? '' : `${b < 0 ? ` ${MINUS} ` : ' + '}${Math.abs(b) === 1 ? '' : Math.abs(b)}y`;
-  return `${x}${y} = ${num(c)}`;
+  return M(`${x}${y} = ${num(c)}`);
 }
 function lineEq(n, d, c) { // y = (n/d)x + c
   if (d < 0) { n = -n; d = -d; }
   const g = gcd(n, d); n /= g; d /= g;
   const mx = d === 1 ? poly([[n, 1]]) : `${n < 0 ? MINUS : ''}${fr(Math.abs(n), d)}x`;
   const cs = c === 0 ? '' : (c < 0 ? ` ${MINUS} ${-c}` : ` + ${c}`);
-  return `y = ${n === 0 ? num(c) : mx + cs}`;
+  return M(`y = ${n === 0 ? num(c) : mx + cs}`);
 }
 function mono(k, vars) { // k x^a y^b
   const body = vars.filter(([, p]) => p !== 0).map(([v, p]) => sup(v, p)).join('');
   if (!body) return num(k);
-  return (k === 1 ? '' : k === -1 ? MINUS : num(k)) + body;
+  return M((k === 1 ? '' : k === -1 ? MINUS : num(k)) + body);
 }
 function scaled(n, k) { // integer n divided by 10^k, as a string (k may be negative)
   if (k <= 0) return String(n) + '0'.repeat(-k);
@@ -73,7 +75,7 @@ function sfNorm(N, pow) { // value = N × 10^pow → standard form
   const e = pow + s.length - 1;
   return { mant: s.length > 1 ? `${s[0]}.${s.slice(1)}` : s, e, s, pow };
 }
-const sfHTML = ({ mant, e }) => `${mant} × 10<sup>${num(e)}</sup>`;
+const sfHTML = ({ mant, e }) => M(`${mant} × 10<sup>${num(e)}</sup>`);
 function ordinary(s, pow) {
   const group = t => t.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   if (pow >= 0) return group(s + '0'.repeat(pow));
@@ -81,6 +83,7 @@ function ordinary(s, pow) {
   return pos > 0 ? group(s.slice(0, pos)) + '.' + s.slice(pos) : '0.' + '0'.repeat(-pos) + s;
 }
 const list = arr => arr.map(num).join(', ');
+const ordinal = n => `${n}<sup>${[11, 12, 13].includes(n % 100) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th'}</sup>`;
 const NAMES = ['Ayla', 'Kerem', 'Maya', 'Noah', 'Zeynep', 'Omar', 'Lena', 'Deniz', 'Arda', 'Sofia'];
 
 /* ---------- generators ---------- */
@@ -166,10 +169,10 @@ const GENERATORS = [
     id: 'substitution', name: 'Substitution', courses: ['myp8', 'nondp'], instr: 'Substitute the values and evaluate.',
     gen(l) {
       const x = RNG.nz(-6, 6), y = RNG.nz(-6, 6);
-      if (l === 1) { const a = RNG.int(2, 9), b = RNG.nz(-10, 10); return { q: `Find the value of ${lin(a, b)} when x = ${num(x)}.`, a: num(a * x + b) }; }
-      if (l === 2) { const a = RNG.int(2, 5), b = RNG.int(2, 6); return { q: `Find the value of ${a}x<sup>2</sup> ${MINUS} ${b}y when x = ${num(x)} and y = ${num(y)}.`, a: num(a * x * x - b * y) }; }
+      if (l === 1) { const a = RNG.int(2, 9), b = RNG.nz(-10, 10); return { q: `Find the value of ${lin(a, b)} when ${M(`x = ${num(x)}`)}.`, a: num(a * x + b) }; }
+      if (l === 2) { const a = RNG.int(2, 5), b = RNG.int(2, 6); return { q: `Find the value of ${M(`${a}x<sup>2</sup> ${MINUS} ${b}y`)} when ${M(`x = ${num(x)}`)} and ${M(`y = ${num(y)}`)}.`, a: num(a * x * x - b * y) }; }
       const a = RNG.int(2, 4);
-      return { q: `Find the value of x<sup>2</sup> + ${a}xy ${MINUS} y<sup>2</sup> when x = ${num(x)} and y = ${num(y)}.`, a: num(x * x + a * x * y - y * y) };
+      return { q: `Find the value of ${M(`x<sup>2</sup> + ${a}xy ${MINUS} y<sup>2</sup>`)} when ${M(`x = ${num(x)}`)} and ${M(`y = ${num(y)}`)}.`, a: num(x * x + a * x * y - y * y) };
     },
   },
   {
@@ -254,7 +257,7 @@ const GENERATORS = [
   {
     id: 'gradient', name: 'Gradient & equation of a line', courses: ['myp8', 'myp9', 'dpaisl', 'nondp'], instr: 'Show your working.',
     gen(l) {
-      const pt = (x, y) => `(${num(x)}, ${num(y)})`;
+      const pt = (x, y) => M(`(${num(x)}, ${num(y)})`);
       if (l === 1) {
         let x1, x2; do { x1 = RNG.int(-8, 8); x2 = RNG.int(-8, 8); } while (x1 === x2);
         const y1 = RNG.int(-8, 8), y2 = RNG.int(-8, 8);
@@ -263,7 +266,7 @@ const GENERATORS = [
       if (l === 2) {
         const m = RNG.nz(-5, 5), c = RNG.int(-9, 9);
         let x1, x2; do { x1 = RNG.int(-5, 5); x2 = RNG.int(-5, 5); } while (x1 === x2);
-        return { q: `Find the equation of the line through A${pt(x1, m * x1 + c)} and B${pt(x2, m * x2 + c)}, in the form y = mx + c.`, a: lineEq(m, 1, c) };
+        return { q: `Find the equation of the line through A${pt(x1, m * x1 + c)} and B${pt(x2, m * x2 + c)}, in the form ${M('y = mx + c')}.`, a: lineEq(m, 1, c) };
       }
       const m = RNG.pick([1, -1, 2, -2, 3, -3, 4]), k = RNG.int(-6, 6), y1 = RNG.int(-6, 6);
       if (RNG.chance(0.5)) {
@@ -307,14 +310,14 @@ const GENERATORS = [
       }
       if (RNG.chance(0.5)) {
         const [base, pw, [n, d]] = RNG.pick([[8, '2/3', [4, 1]], [27, '2/3', [9, 1]], [16, '3/4', [8, 1]], [32, '2/5', [4, 1]], [81, '3/4', [27, 1]], [125, '2/3', [25, 1]], [4, `${MINUS}1/2`, [1, 2]], [9, `${MINUS}3/2`, [1, 27]], [16, `${MINUS}1/4`, [1, 2]], [100, `${MINUS}1/2`, [1, 10]], [2, `${MINUS}3`, [1, 8]], [5, '0', [1, 1]]]);
-        return { q: `Evaluate ${base}<sup>${pw}</sup>`, a: fr(n, d) };
+        return { q: `Evaluate ${M(`${base}<sup>${pw}</sup>`)}`, a: fr(n, d) };
       }
       const a = RNG.int(1, 4), b = RNG.int(a + 1, 8);
-      return { q: `Simplify x<sup>${a}</sup> ÷ x<sup>${b}</sup>, giving your answer with a negative index.`, a: `${sup('x', a - b)} = <span class="frac"><span>1</span><span>${sup('x', b - a)}</span></span>` };
+      return { q: `Simplify ${M(`x<sup>${a}</sup> ÷ x<sup>${b}</sup>`)}, giving your answer with a negative index.`, a: `${sup('x', a - b)} = <span class="frac"><span>1</span><span>${sup('x', b - a)}</span></span>` };
     },
   },
   {
-    id: 'standard-form', name: 'Standard form', courses: ['myp9', 'dpaisl'], instr: 'Write numbers in the form a × 10<sup>k</sup>, where 1 ≤ a < 10 and k ∈ ℤ.',
+    id: 'standard-form', name: 'Standard form', courses: ['myp9', 'dpaisl'], instr: `Write numbers in the form ${M('a × 10<sup>k</sup>')}, where ${M('1 ≤ a &lt; 10')} and ${M('k ∈ ℤ')}.`,
     gen(l) {
       if (l < 3) {
         let N; do { N = RNG.int(11, 999); } while (N % 10 === 0);
@@ -445,25 +448,25 @@ const GENERATORS = [
     id: 'arithmetic-seq', name: 'Arithmetic sequences', courses: ['myp9', 'dpaisl'], instr: 'Show your working.',
     gen(l) {
       const u1 = RNG.int(-10, 20), d = RNG.nz(-7, 9);
-      const terms = [0, 1, 2, 3].map(i => num(u1 + i * d)).join(', ') + ', …';
-      if (l === 1) return { q: `Find an expression for the n<sup>th</sup> term of ${terms}`, a: `u<sub>n</sub> = ${lin(d, u1 - d, 'n')}` };
+      const terms = M([0, 1, 2, 3].map(i => num(u1 + i * d)).join(', ') + ', …');
+      if (l === 1) return { q: `Find an expression for the ${M('n')}<sup>th</sup> term of ${terms}`, a: `u<sub>n</sub> = ${lin(d, u1 - d, 'n')}` };
       if (l === 2) {
         const n = RNG.int(15, 60);
-        if (RNG.chance(0.5)) return { q: `An arithmetic sequence has u<sub>1</sub> = ${num(u1)} and d = ${num(d)}. Find u<sub>${n}</sub>.`, a: num(u1 + (n - 1) * d) };
-        return { q: `Which term of ${terms} is equal to ${num(u1 + (n - 1) * d)}?`, a: `the ${n}<sup>th</sup> term` };
+        if (RNG.chance(0.5)) return { q: `An arithmetic sequence has ${M(`u<sub>1</sub> = ${num(u1)}`)} and ${M(`d = ${num(d)}`)}. Find ${M(`u<sub>${n}</sub>`)}.`, a: num(u1 + (n - 1) * d) };
+        return { q: `Which term of ${terms} is equal to ${num(u1 + (n - 1) * d)}?`, a: `the ${ordinal(n)} term` };
       }
       const n = RNG.int(10, 40);
       if (RNG.chance(0.5)) return { q: `Find the sum of the first ${n} terms of ${terms}`, a: `S<sub>${n}</sub> = ${num(n * (2 * u1 + (n - 1) * d) / 2)}` };
       const p = RNG.int(2, 5), q = RNG.int(p + 3, 12);
-      return { q: `In an arithmetic sequence, u<sub>${p}</sub> = ${num(u1 + (p - 1) * d)} and u<sub>${q}</sub> = ${num(u1 + (q - 1) * d)}. Find u<sub>1</sub> and d.`, a: `u<sub>1</sub> = ${num(u1)}, d = ${num(d)}` };
+      return { q: `In an arithmetic sequence, ${M(`u<sub>${p}</sub> = ${num(u1 + (p - 1) * d)}`)} and ${M(`u<sub>${q}</sub> = ${num(u1 + (q - 1) * d)}`)}. Find ${M('u<sub>1</sub>')} and ${M('d')}.`, a: `u<sub>1</sub> = ${num(u1)}, d = ${num(d)}` };
     },
   },
   {
     id: 'geometric-seq', name: 'Geometric sequences', courses: ['dpaisl'], instr: 'Show your working.',
     gen(l) {
       const u1 = RNG.int(1, 9) * RNG.pick([1, 1, -1]), r = RNG.pick([2, 3, -2, -3]);
-      const terms = [0, 1, 2, 3].map(i => num(u1 * r ** i)).join(', ') + ', …';
-      if (l === 1) { const n = RNG.int(6, 10); return { q: `For the sequence ${terms} find the common ratio and u<sub>${n}</sub>.`, a: `r = ${num(r)}, u<sub>${n}</sub> = ${num(u1 * r ** (n - 1))}` }; }
+      const terms = M([0, 1, 2, 3].map(i => num(u1 * r ** i)).join(', ') + ', …');
+      if (l === 1) { const n = RNG.int(6, 10); return { q: `For the sequence ${terms} find the common ratio and ${M(`u<sub>${n}</sub>`)}.`, a: `r = ${num(r)}, u<sub>${n}</sub> = ${num(u1 * r ** (n - 1))}` }; }
       if (l === 2) { const n = RNG.int(5, 9); return { q: `Find the sum of the first ${n} terms of ${terms}`, a: `S<sub>${n}</sub> = ${num(u1 * (r ** n - 1) / (r - 1))}` }; }
       const P = RNG.int(20, 90) * 1000, g = RNG.pick([1.5, 2, 2.5, 3, 3.5, 4]), n = RNG.int(5, 15);
       return { q: `A town has a population of ${P.toLocaleString('en-US')}, growing by ${g}% per year. Find the population after ${n} years, to the nearest whole number.`, a: Math.round(P * (1 + g / 100) ** n).toLocaleString('en-US') };
@@ -552,17 +555,17 @@ const GENERATORS = [
     gen(l) {
       if (l === 1) {
         const n = RNG.int(3, 5), a = RNG.nz(-6, 6), b = RNG.nz(-8, 8), c = RNG.nz(-9, 9), d = RNG.int(-10, 10);
-        return { q: `Find f′(x) given f(x) = ${poly([[a, n], [b, 2], [c, 1], [d, 0]])}`, a: `f′(x) = ${poly([[a * n, n - 1], [2 * b, 1], [c, 0]])}` };
+        return { q: `Find ${M('f′(x)')} given ${M(`f(x) = ${poly([[a, n], [b, 2], [c, 1], [d, 0]])}`)}`, a: `f′(x) = ${poly([[a * n, n - 1], [2 * b, 1], [c, 0]])}` };
       }
       if (l === 2) {
         const a = RNG.nz(-3, 3), b = RNG.nz(-5, 5), c = RNG.int(-8, 8), d = RNG.int(-9, 9), k = RNG.nz(-3, 3);
         const f = x => a * x ** 3 + b * x ** 2 + c * x + d, m = 3 * a * k * k + 2 * b * k + c;
         const curve = poly([[a, 3], [b, 2], [c, 1], [d, 0]]);
-        if (RNG.chance(0.5)) return { q: `Find the gradient of the curve y = ${curve} at the point where x = ${num(k)}.`, a: num(m) };
-        return { q: `Find the equation of the tangent to y = ${curve} at x = ${num(k)}.`, a: lineEq(m, 1, f(k) - m * k) };
+        if (RNG.chance(0.5)) return { q: `Find the gradient of the curve ${M(`y = ${curve}`)} at the point where ${M(`x = ${num(k)}`)}.`, a: num(m) };
+        return { q: `Find the equation of the tangent to ${M(`y = ${curve}`)} at ${M(`x = ${num(k)}`)}.`, a: lineEq(m, 1, f(k) - m * k) };
       }
       const a = RNG.nz(-4, 4), x0 = RNG.int(-5, 5), c = RNG.int(-10, 10), b = -2 * a * x0;
-      return { q: `Find the coordinates of the stationary point of y = ${poly([[a, 2], [b, 1], [c, 0]])} and state whether it is a maximum or a minimum.`, a: `(${num(x0)}, ${num(a * x0 * x0 + b * x0 + c)}), ${a > 0 ? 'minimum' : 'maximum'}` };
+      return { q: `Find the coordinates of the stationary point of ${M(`y = ${poly([[a, 2], [b, 1], [c, 0]])}`)} and state whether it is a maximum or a minimum.`, a: `(${num(x0)}, ${num(a * x0 * x0 + b * x0 + c)}), ${a > 0 ? 'minimum' : 'maximum'}` };
     },
   },
 ];

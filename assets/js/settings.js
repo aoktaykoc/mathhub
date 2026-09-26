@@ -258,7 +258,43 @@
     $('#storageInfo').textContent = `${S.lessons.length} lessons · ${S.assessments.length} assessments · ${S.teachers.length} teachers · ${S.worksheets.length} saved worksheets · about ${Math.max(1, Math.round(size / 1024))} KB used (browsers allow about 5 MB).` +
       (files.length ? ` Also ${files.length} file(s) from Claude (${fmtBytes(files.reduce((s, f) => s + f.size, 0))}) in the browser’s file storage — these are not included in the backup file, so keep your own copies.` : '');
   }
-  $('#exportBtn').onclick = () => { downloadFile(`mathhub-backup-${isoDate()}.json`, JSON.stringify(S, null, 2)); toast('Backup downloaded', 'success'); };
+  // Backups go into one chosen folder (File System Access API, Chrome/Edge); the folder handle is kept in IndexedDB.
+  // Browsers without the API fall back to a normal download.
+  const BACKUP_DIR_KEY = '__backupDir';
+  const canPickFolder = 'showDirectoryPicker' in window;
+  async function backupDir() { try { return (await FileStore.get(BACKUP_DIR_KEY)) || null; } catch (e) { return null; } }
+  async function pickBackupDir() {
+    const dir = await window.showDirectoryPicker({ id: 'mathhub-backup', mode: 'readwrite' });
+    await FileStore.put(BACKUP_DIR_KEY, dir);
+    renderBackupDir();
+    return dir;
+  }
+  async function renderBackupDir() {
+    const el = $('#backupDirInfo');
+    if (!canPickFolder) { el.textContent = 'This browser saves backups to your Downloads folder. Use Chrome or Edge to save them straight into a folder you choose.'; $('#backupDirBtn').hidden = true; return; }
+    const dir = await backupDir();
+    el.textContent = dir ? `Backups are saved into the folder “${dir.name}”.` : 'The first export asks you to choose a folder; later backups are saved there automatically.';
+    $('#backupDirBtn').textContent = dir ? 'Change backup folder…' : 'Choose backup folder…';
+  }
+  $('#backupDirBtn').onclick = () => pickBackupDir().catch(e => { if (e.name !== 'AbortError') toast(`Could not use that folder: ${e.message}`, 'error'); });
+  $('#exportBtn').onclick = async () => {
+    const name = `mathhub-backup-${isoDate()}.json`, text = JSON.stringify(S, null, 2);
+    if (!canPickFolder) { downloadFile(name, text); toast('Backup downloaded', 'success'); return; }
+    try {
+      let dir = await backupDir();
+      if (dir && (await dir.queryPermission({ mode: 'readwrite' })) !== 'granted' && (await dir.requestPermission({ mode: 'readwrite' })) !== 'granted') dir = null;
+      if (!dir) dir = await pickBackupDir();
+      const fh = await dir.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(text);
+      await w.close();
+      toast(`Backup saved to “${dir.name}/${name}”`, 'success');
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      downloadFile(name, text);
+      toast(`Could not write to the backup folder (${e.message}) — downloaded instead`, 'error');
+    }
+  };
   $('#importBtn').onclick = () => $('#importFile').click();
   $('#importFile').addEventListener('change', async e => {
     const file = e.target.files[0]; e.target.value = '';
@@ -281,7 +317,7 @@
     location.reload();
   }, 'Delete everything');
 
-  function renderAll() { renderDayTypes(); renderCycle(); renderBells(); renderClasses(); renderTT(); storageInfo(); }
+  function renderAll() { renderDayTypes(); renderCycle(); renderBells(); renderClasses(); renderTT(); storageInfo(); renderBackupDir(); }
   renderAll();
   if (location.hash) setTimeout(() => $(location.hash)?.scrollIntoView({ behavior: 'smooth' }), 50);
 })();

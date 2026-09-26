@@ -80,13 +80,15 @@
         <p class="muted small">All MathHub data is stored in this browser on this computer. Export a backup regularly, for example into this OneDrive folder, and import it to move to another computer or browser.</p>
         <div class="form-row" style="justify-content:flex-start">
           <button class="btn btn-primary" id="exportBtn" style="flex:0">Export backup</button>
+          <button class="btn btn-ghost" id="backupDirBtn" style="flex:0">Choose backup folder…</button>
           <button class="btn btn-ghost" id="importBtn" style="flex:0">Import backup…</button>
           <input type="file" id="importFile" accept=".json,application/json" hidden>
           <button class="btn btn-ghost" id="sampleBtn" style="flex:0">Load sample data</button>
           <button class="btn btn-ghost" id="resetBells" style="flex:0">Restore default bell times</button>
           <button class="btn btn-danger-ghost" id="resetBtn" style="flex:0">Reset everything</button>
         </div>
-        <p class="muted small" id="storageInfo" style="margin:.8rem 0 0"></p>
+        <p class="muted small" id="backupDirInfo" style="margin:.8rem 0 0"></p>
+        <p class="muted small" id="storageInfo" style="margin:.4rem 0 0"></p>
       </section>
     </main>
   </div>

@@ -225,6 +225,7 @@ label.inline { flex-direction: row; align-items: center; gap: .45rem; font-weigh
   border: 1px solid var(--border); border-radius: 999px; padding: .25rem .7rem .25rem .5rem; cursor: pointer; background: var(--surface);
 }
 .chip-check:has(input:checked) { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+.chip-check:has(input:disabled) { opacity: .55; cursor: not-allowed; }
 .chip { display: inline-block; font-size: .75rem; padding: .1rem .55rem; border-radius: 999px; background: var(--surface-3); color: var(--muted); font-weight: 600; }
 
 /* ---------- Cards & layout ---------- */
@@ -568,6 +569,15 @@ dialog.modal::backdrop { background: rgba(10, 14, 28, .5); }
 }
 .dropzone:hover, .dropzone.over { border-color: var(--primary); background: var(--primary-soft); }
 .dz-icon { font-size: 1.4rem; color: var(--primary); line-height: 1; }
+/* AI content studio inside the lesson editor */
+.ai-panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.ai-panel > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .7rem; padding: .7rem .9rem; list-style: none; }
+.ai-panel > summary::-webkit-details-marker { display: none; }
+.ai-panel > summary::before { content: '▸'; color: var(--muted); transition: transform .15s; }
+.ai-panel[open] > summary::before { transform: rotate(90deg); }
+.ai-panel-title { font-weight: 700; }
+.ai-panel-body { padding: 0 .9rem .9rem; display: flex; flex-direction: column; gap: .5rem; }
+.ai-sep { border: 0; border-top: 1px solid var(--border); margin: .5rem 0 .2rem; width: 100%; }
 .file-list { list-style: none; margin: .5rem 0 0; padding: 0; }
 .file-list li { display: flex; align-items: center; gap: .6rem; padding: .4rem .2rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
 .file-list li:last-child { border-bottom: 0; }
@@ -590,6 +600,12 @@ dialog.modal::backdrop { background: rgba(10, 14, 28, .5); }
 .lib-topic-head .grow { flex: 1; }
 .lib-outcomes { list-style: none; margin: .35rem 0 0; padding: 0; }
 .lib-outcomes li { display: flex; gap: .5rem; align-items: flex-start; font-size: .88rem; padding: .15rem 0; }
+.strand-tag { display: inline-block; font-size: .7rem; font-weight: 700; padding: .08rem .45rem; border-radius: 999px; color: var(--s); background: color-mix(in srgb, var(--s) 14%, transparent); }
+.strand-chip { font: inherit; font-size: .78rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: .2rem .7rem; cursor: pointer; }
+.strand-chip[style] { border-color: color-mix(in srgb, var(--s) 45%, var(--border)); }
+.strand-chip.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.strand-chip[style].active { background: var(--s); border-color: var(--s); color: #fff; }
+.strand-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--s); vertical-align: 1px; margin-left: .2rem; }
 pre.fmt { margin: 0; font-size: .78rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .6rem .75rem; white-space: pre-wrap; }
 code { font-size: .85em; background: var(--surface-3); border-radius: 4px; padding: 0 .25rem; }
 
@@ -657,6 +673,17 @@ code { font-size: .85em; background: var(--surface-3); border-radius: 4px; paddi
 .qlist .lvl { font-family: "Segoe UI", sans-serif; font-size: .62rem; color: #999; margin-left: .35rem; vertical-align: super; }
 .sheet .answer-list li { min-height: 0; padding: .12rem 0; }
 .sheet-foot { margin-top: 1.4rem; font-family: "Segoe UI", sans-serif; font-size: .7rem; color: #888; text-align: right; }
+/* LaTeX look: KaTeX typesets the maths; its Computer Modern font (KaTeX_Main) is used for the text too */
+.sheet.tex, .sheet.tex .sheet-course, .sheet.tex .sheet-fields, .sheet.tex h3, .sheet.tex .sheet-foot, .sheet.tex .lvl { font-family: KaTeX_Main, "Latin Modern Roman", "Times New Roman", serif; }
+.sheet.tex { font-size: 16px; }
+.sheet.tex .sheet-course { text-transform: none; font-variant: small-caps; letter-spacing: .04em; font-size: .85rem; }
+.sheet.tex h2 { font-weight: 700; font-size: 1.55rem; }
+.sheet.tex h3 { text-transform: none; letter-spacing: 0; font-size: 1.1rem; font-weight: 700; color: #111; border-bottom: 0; }
+.sheet.tex .sheet-fields { font-size: .9rem; }
+.sheet .kx { cursor: pointer; border-radius: 3px; }
+.sheet .kx .katex { font-size: 1em; }
+.sheet .kx:hover { background: #eef1ff; }
+@media print { .sheet .kx:hover { background: none; } }
 .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: .92em; margin: 0 .12em; line-height: 1.15; }
 .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 .2em; }
 .frac > span:last-child { padding: 0 .2em; }

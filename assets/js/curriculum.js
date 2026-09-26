@@ -4,6 +4,7 @@
   let current = location.hash.slice(1);
   if (!curriculum(current)) current = S.curricula[0]?.id;
   let track = '';
+  let strand = '';
   const open = new Set();
 
   const cur = () => curriculum(current);
@@ -39,7 +40,7 @@
           <button class="btn btn-sm btn-ghost" id="editCur" style="flex:0">Edit details</button>
         </div></div>
       <div class="course-summary">
-        <div class="card"><div class="stat-label">Units</div><div class="stat-value">${c.units.length}</div><div class="stat-sub">${hoursTotal ? `${hoursTotal} teaching hours (${esc(track)})` : 'strands / topics'}</div></div>
+        <div class="card"><div class="stat-label">Units</div><div class="stat-value">${c.units.length}</div><div class="stat-sub">${hoursTotal ? `${hoursTotal} teaching hours (${esc(track)})` : 'in teaching order'}</div></div>
         <div class="card"><div class="stat-label">Topics</div><div class="stat-value">${topics.filter(t => inTrack(t, track)).length}</div><div class="stat-sub">${track ? `in ${esc(track)}` : 'all levels'}</div></div>
         <div class="card"><div class="stat-label">Learning outcomes</div><div class="stat-value">${outs.length}</div><div class="stat-sub">${planned} planned · ${taught} taught</div></div>
         <div class="card"><div class="stat-label">Coverage</div><div class="stat-value">${outs.length ? Math.round(planned / outs.length * 100) : 0}%</div><div class="stat-sub">of outcomes in a lesson plan</div></div>
@@ -54,17 +55,22 @@
       return;
     }
 
-    const match = (t) => !q || `${t.code} ${t.title} ${t.outcomes.map(o => o.text).join(' ')}`.toLowerCase().includes(q);
+    const strands = [...new Set(topics.map(t => t.strand).filter(Boolean))];
+    if (strand && !strands.includes(strand)) strand = '';
+    const match = (t) => (!strand || t.strand === strand) && (!q || `${t.code} ${t.title} ${t.strand || ''} ${t.outcomes.map(o => o.text).join(' ')}`.toLowerCase().includes(q));
+    const strandBar = strands.length ? `<div class="chip-group strand-bar" style="margin-bottom:.8rem"><span class="small muted" style="align-self:center">MYP strand:</span>
+      ${['', ...strands].map(s => `<button type="button" class="strand-chip ${s === strand ? 'active' : ''}" data-strand="${esc(s)}" ${s ? `style="--s:${strandColor(s)}"` : ''}>${s ? esc(s) : 'All strands'}</button>`).join('')}</div>` : '';
     const unitsHtml = c.units.map((u, ui) => {
       const ts = u.topics.filter(t => inTrack(t, track) && match(t));
-      if (q && !ts.length) return '';
+      if ((q || strand) && !ts.length) return '';
       const uOuts = ts.flatMap(t => t.outcomes.filter(o => inTrack(o, track)));
       const uDone = uOuts.filter(o => cov[o.id]).length;
-      const isOpen = q || open.has(u.id);
+      const isOpen = q || strand || open.has(u.id);
       return `<details class="unit-card lib-unit" data-unit="${u.id}" ${isOpen ? 'open' : ''}>
         <summary><span class="unit-num" style="--c:var(--primary)">${ui + 1}</span>
           <div class="unit-head"><h3>${esc(u.title)}</h3>
-            <div class="unit-sub">${ts.length} topics · ${uOuts.length} outcomes · ${uDone} planned${u.hours ? ` · ${Object.entries(u.hours).filter(([k, v]) => v && (!track || k === track)).map(([k, v]) => `${esc(k)} ${v} h`).join(' / ')}` : ''}</div>
+            <div class="unit-sub">${u.weeks ? `${esc(u.weeks)} weeks · ` : ''}${ts.length} topics · ${uOuts.length} outcomes · ${uDone} planned${u.hours ? ` · ${Object.entries(u.hours).filter(([k, v]) => v && (!track || k === track)).map(([k, v]) => `${esc(k)} ${v} h`).join(' / ')}` : ''}</div>
+            ${u.assessment ? `<div class="unit-sub" style="margin-top:.1rem">📝 Possible assessment: ${esc(u.assessment)}</div>` : ''}
             <div class="progress"><span style="width:${uOuts.length ? uDone / uOuts.length * 100 : 0}%"></span></div></div>
         </summary>
         <div class="lib-body">
@@ -73,11 +79,13 @@
             return `<div class="lib-topic">
               <div class="lib-topic-head">
                 ${t.code ? `<span class="tp-code">${esc(t.code)}</span>` : ''}<strong>${esc(t.title)}</strong> ${trackBadge(t, c)}
+                ${t.strand ? `<span class="strand-tag" style="--s:${strandColor(t.strand)}">${esc(t.strand)}</span>` : ''}
+                ${t.lessons ? `<span class="small muted">${t.lessons} lesson${t.lessons > 1 ? 's' : ''}</span>` : ''}
                 <span class="grow"></span>
                 <a class="btn btn-sm btn-soft" href="builder.html?topic=${encodeURIComponent(t.id)}${track ? `&track=${encodeURIComponent(track)}` : ''}">Build lesson</a>
                 <button class="btn btn-sm btn-ghost" data-edit-topic="${t.id}">Edit</button>
               </div>
-              <ul class="lib-outcomes">${tOuts.map(o => `<li>${coverageMark(cov[o.id])}<span>${esc(o.text)}</span> ${trackBadge(o, c)}</li>`).join('') || '<li class="muted small">No outcomes yet.</li>'}</ul>
+              <ul class="lib-outcomes">${tOuts.map(o => `<li>${coverageMark(cov[o.id])}<span>${esc(o.text)}${o.lessons ? ` <span class="small faint">(${o.lessons} lesson${o.lessons > 1 ? 's' : ''})</span>` : ''}</span> ${trackBadge(o, c)}</li>`).join('') || '<li class="muted small">No outcomes yet.</li>'}</ul>
             </div>`;
           }).join('')}
           <div class="form-row" style="margin-top:.6rem">
@@ -90,7 +98,7 @@
         </div>
       </details>`;
     }).join('');
-    $('#panel').innerHTML = header + (unitsHtml || '<p class="empty">Nothing matches your search.</p>') +
+    $('#panel').innerHTML = header + strandBar + (unitsHtml || '<p class="empty">Nothing matches your search.</p>') +
       '<p class="small faint">✓ taught · ◐ planned in a lesson · ○ not yet</p>';
     bindHeader();
   }
@@ -142,12 +150,16 @@
     u = u || { id: uid('u'), title: '', hours: null, topics: [] };
     openModal({
       title: isNew ? 'New unit' : 'Edit unit',
-      body: `<div class="form-grid"><label class="span-2">Unit / strand title<input data-f="title" value="${esc(u.title)}" placeholder="e.g. Number, Algebra, Topic 2 — Functions"></label>
+      body: `<div class="form-grid"><label class="span-2">Unit title<input data-f="title" value="${esc(u.title)}" placeholder="e.g. Unit 1 — All About Numbers, Topic 2 — Functions"></label>
+        <label>Duration (weeks)<input data-f="weeks" value="${esc(u.weeks || '')}" placeholder="e.g. 6 or 8–9"></label>
+        <label>Possible assessment<input data-f="assessment" value="${esc(u.assessment || '')}" placeholder="e.g. Criteria A and B"></label>
         ${c.tracks.map(t => `<label>Teaching hours (${esc(t)})<input type="number" min="0" data-h="${esc(t)}" value="${esc(u.hours?.[t] ?? '')}"></label>`).join('')}</div>`,
       actions: [{ label: 'Cancel', cls: 'btn-ghost' }, { label: 'Save', cls: 'btn-primary', onClick: dlg => {
         const title = $('[data-f=title]', dlg).value.trim();
         if (!title) { toast('Title is required', 'error'); return false; }
         u.title = title;
+        u.weeks = $('[data-f=weeks]', dlg).value.trim();
+        u.assessment = $('[data-f=assessment]', dlg).value.trim();
         const h = {}; $$('[data-h]', dlg).forEach(i => { if (i.value) h[i.dataset.h] = Number(i.value); });
         u.hours = Object.keys(h).length ? h : null;
         if (isNew) c.units.push(u);
@@ -165,6 +177,8 @@
       body: `<div class="form-grid">
         <label>Code (optional)<input data-f="code" value="${esc(t.code)}" placeholder="e.g. 2.6"></label>
         <label>Topic title<input data-f="title" value="${esc(t.title)}"></label>
+        ${c.programme === 'MYP' ? `<label>MYP strand<select data-f="strand"><option value="">—</option>${MYP_STRANDS.map(s => `<option ${s === t.strand ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>` : ''}
+        <label>Number of lessons (optional)<input type="number" min="0" data-f="lessons" value="${esc(t.lessons ?? '')}"></label>
         ${c.tracks.length ? `<div class="span-2"><label style="margin-bottom:.3rem">Taught in (leave all unticked for every level)</label><div class="chip-group" data-tracks>${c.tracks.map(tr =>
           `<label class="chip-check"><input type="checkbox" value="${esc(tr)}" ${t.tracks.includes(tr) ? 'checked' : ''}> ${esc(tr)}</label>`).join('')}</div></div>` : ''}
         <label class="span-2">Learning outcomes (one per line)<textarea data-f="outcomes" rows="8">${esc(t.outcomes.map(o => tagFor(o, c) + o.text).join('\n'))}</textarea></label>
@@ -180,6 +194,8 @@
           if (!title) { toast('Topic title is required', 'error'); return false; }
           t.code = $('[data-f=code]', dlg).value.trim();
           t.title = title;
+          if ($('[data-f=strand]', dlg)) t.strand = $('[data-f=strand]', dlg).value;
+          t.lessons = Number($('[data-f=lessons]', dlg).value) || null;
           t.tracks = $$('[data-tracks] input:checked', dlg).map(i => i.value);
           if (t.tracks.length === c.tracks.length) t.tracks = [];
           const parsed = parseCurriculumText(`### x\n${$('[data-f=outcomes]', dlg).value.split('\n').map(l => l.trim() ? `- ${l.replace(/^[-*•]\s*/, '')}` : '').join('\n')}`, c.tracks)[0]?.topics[0]?.outcomes || [];
@@ -269,7 +285,7 @@
   $('#tabs').addEventListener('click', e => {
     if (e.target.closest('#addCur')) { editCurriculum(null); return; }
     const t = e.target.closest('[data-id]'); if (!t) return;
-    current = t.dataset.id; track = ''; history.replaceState(null, '', `#${current}`); render();
+    current = t.dataset.id; track = ''; strand = ''; history.replaceState(null, '', `#${current}`); render();
   });
   $('#trackSeg').addEventListener('click', e => { const b = e.target.closest('[data-track]'); if (!b) return; track = b.dataset.track; render(); });
   $('#q').addEventListener('input', debounce(render, 200));
@@ -281,6 +297,7 @@
     const c = cur();
     const b = e.target.closest('button'); if (!b) return;
     const d = b.dataset;
+    if ('strand' in d) { strand = d.strand; render(); return; }
     if (d.editTopic) { const u = c.units.find(x => x.topics.some(t => t.id === d.editTopic)); editTopic(u, u.topics.find(t => t.id === d.editTopic)); }
     else if (d.addTopic) editTopic(findUnit(d.addTopic), null);
     else if (d.editUnit) editUnit(findUnit(d.editUnit));
