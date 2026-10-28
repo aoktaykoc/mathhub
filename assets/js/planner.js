@@ -42,8 +42,9 @@
   }
   function dayHead(date) {
     const variant = S.variantNames?.[variantOf(weekdayKey(date))] || '';
+    const hol = holidayOn(date);
     return `<header class="day-head"><strong>${esc(DAY_NAMES[weekdayKey(date)])}</strong><span>${esc(fmtDate(date, { day: 'numeric', month: 'short' }))}</span>
-      ${variant ? `<small>${esc(variant.split(' (')[0])} bells</small>` : ''}</header>`;
+      ${hol ? `<small>${esc(hol.name || 'Holiday')}</small>` : variant ? `<small>${esc(variant.split(' (')[0])} bells</small>` : ''}</header>`;
   }
   function dayFooter(date, loose) {
     return `${loose.map(l => { const c = App.course(l.courseId); return `<div class="slot" style="--c:${esc(colorFor(l.classId, l.courseId))}" data-lesson="${l.id}" tabindex="0" role="button">
@@ -72,7 +73,7 @@
     ].sort((a, b) => a.t.localeCompare(b.t));
     return `<section class="day-col ${date === isoDate() ? 'is-today' : ''}">${dayHead(date)}
       <div class="day-body">
-        ${items.map(i => i.html).join('') || '<p class="faint small" style="text-align:center;margin:.6rem 0">No classes</p>'}
+        ${items.map(i => i.html).join('') || `<p class="faint small" style="text-align:center;margin:.6rem 0">${holidayOn(date) ? 'Holiday · no classes' : 'No classes'}</p>`}
         ${dayFooter(date, loose)}
       </div></section>`;
   }
@@ -229,8 +230,9 @@
   /* ---------- printing (one week, or both weeks of the cycle) ---------- */
   function printWeeks(count, withNotes) {
     let first = week;
-    if (count === 2 && cycleOn() && cycleWeekOf(week) === 2) first = addDays(week, -7); // always Week 1 then Week 2
-    const starts = count === 2 ? [first, addDays(first, 7)] : [week];
+    if (count === 2 && cycleOn() && isHolidayWeek(week)) first = addSchoolWeeks(week, 1);
+    if (count === 2 && cycleOn() && cycleWeekOf(first) === 2) first = addSchoolWeeks(first, -1); // always Week 1 then Week 2
+    const starts = count === 2 ? [first, cycleOn() ? addSchoolWeeks(first, 1) : addDays(first, 7)] : [week];
     const division = prefs.division ? App.schedule(prefs.division)?.name : '';
     const html = starts.map(ws => {
       const dates = workDays().map((_, i) => addDays(ws, i));
@@ -257,7 +259,7 @@
   function render() {
     const dates = weekDates();
     $('#weekLabel').innerHTML = `${esc(fmtDate(dates[0], { day: 'numeric', month: 'short' }))} – ${esc(fmtDate(dates[dates.length - 1], { day: 'numeric', month: 'short', year: 'numeric' }))}` +
-      (cycleOn() ? ` ${badge(cycleLabel(dates[0]), cycleWeekOf(dates[0]) === 1 ? 'info' : 'warning')}` : '');
+      (cycleOn() ? ` ${badge(isHolidayWeek(dates[0]) ? holidayOn(dates[0]).name || 'Holiday' : cycleLabel(dates[0]), cycleTone(dates[0]))}` : '');
     let slots = 0, planned = 0, clashes = 0;
     dates.forEach(d => {
       const taught = slotsOn(d).filter(p => p.classId);
@@ -353,9 +355,9 @@
     const dates = weekDates();
     const src = S.lessons.filter(l => dates.includes(l.date));
     if (!src.length) { toast('There are no lessons in this week to copy', 'error'); return; }
-    // In a two-week cycle the matching timetable is two weeks ahead.
-    const step = cycleOn() ? 14 : 7;
-    const target = cycleOn() ? `the same days two weeks later (next ${cycleLabel(dates[0])})` : 'the same days next week';
+    // In a two-week cycle the matching timetable is two school weeks ahead (holiday weeks skipped).
+    const step = daysBetween(weekStart(dates[0]), cycleOn() ? addSchoolWeeks(dates[0], 2) : addDays(weekStart(dates[0]), 7));
+    const target = cycleOn() ? `the same days two school weeks later (next ${cycleLabel(dates[0])}, week of ${fmtDate(addDays(weekStart(dates[0]), step), { day: 'numeric', month: 'short' })})` : 'the same days next week';
     confirmModal(`Copy ${src.length} lesson plan(s) to ${target}? Periods that already have a lesson are skipped.`, () => {
       let n = 0;
       src.forEach(l => {

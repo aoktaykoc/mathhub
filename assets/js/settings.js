@@ -53,8 +53,33 @@
     $$('#ttWeekTabs .tab').forEach(t => t.classList.toggle('active', Number(t.dataset.ttweek) === ttWeek));
     if (!cycleOn()) { $('#cycleInfo').innerHTML = '<span class="muted">Off: the same timetable repeats every week.</span>'; return; }
     const now = weekStart(isoDate());
-    $('#cycleInfo').innerHTML = `The week of <strong>${esc(fmtDate(now, { day: 'numeric', month: 'short' }))}</strong> is ${badge(cycleLabel(now), cycleWeekOf(now) === 1 ? 'info' : 'warning')} · the week of ${esc(fmtDate(addDays(now, 7), { day: 'numeric', month: 'short' }))} is ${badge(cycleLabel(addDays(now, 7)), cycleWeekOf(addDays(now, 7)) === 1 ? 'info' : 'warning')}`;
+    $('#cycleInfo').innerHTML = `The week of <strong>${esc(fmtDate(now, { day: 'numeric', month: 'short' }))}</strong> is ${badge(cycleLabel(now), cycleTone(now))} · the week of ${esc(fmtDate(addDays(now, 7), { day: 'numeric', month: 'short' }))} is ${badge(cycleLabel(addDays(now, 7)), cycleTone(addDays(now, 7)))}`;
   }
+
+  /* ---------- holidays (skipped by the cycle) ---------- */
+  S.holidays = S.holidays || [];
+  function renderHolidays() {
+    const list = [...S.holidays].sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    $('#holidayList').innerHTML = list.length ? list.map(h => `<div class="form-row" style="align-items:flex-end" data-hol="${h.id}">
+        <label style="flex:1 1 200px">Name<input data-f="name" value="${esc(h.name || '')}" placeholder="Holiday"></label>
+        <label style="flex:0 1 170px">From<input type="date" data-f="start" value="${esc(h.start || '')}"></label>
+        <label style="flex:0 1 170px">To<input type="date" data-f="end" value="${esc(h.end || '')}"></label>
+        <button class="btn btn-sm btn-ghost" data-del-hol style="flex:0">Remove</button>
+      </div>`).join('') : '<p class="muted small" style="margin:0">No holidays yet.</p>';
+  }
+  $('#addHoliday').onclick = () => { S.holidays.push({ id: uid('hol'), name: '', start: '', end: '' }); save(); renderHolidays(); };
+  $('#holidayList').addEventListener('change', e => {
+    const row = e.target.closest('[data-hol]'); if (!row || !e.target.dataset.f) return;
+    const h = S.holidays.find(x => x.id === row.dataset.hol); if (!h) return;
+    h[e.target.dataset.f] = e.target.value.trim();
+    if (h.start && h.end && h.end < h.start) [h.start, h.end] = [h.end, h.start];
+    save(); renderHolidays(); renderCycle();
+  });
+  $('#holidayList').addEventListener('click', e => {
+    const row = e.target.closest('[data-del-hol]')?.closest('[data-hol]'); if (!row) return;
+    S.holidays = S.holidays.filter(x => x.id !== row.dataset.hol); save(); renderHolidays(); renderCycle();
+  });
+  renderHolidays();
   $('#cycleOn').addEventListener('change', e => {
     S.cycle.enabled = e.target.checked;
     if (S.cycle.enabled && !S.cycle.anchor) S.cycle.anchor = weekStart(isoDate());

@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Settings & backup · MathHub</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#5b7cfa">
   <link rel="stylesheet" href="assets/css/style.css">
   <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
@@ -54,6 +56,9 @@
           <button class="btn btn-sm btn-ghost" id="swapWeeks" style="flex:0">This week should be the other week</button>
           <button class="btn btn-sm btn-ghost" id="copyW1" style="flex:0">Copy Week 1 timetable → Week 2</button>
         </div>
+        <div class="card-head" style="margin-top:1.2rem"><div><h3>Holidays</h3><p class="muted small">School weeks that fall entirely inside a holiday don’t count, so Week 1 / Week 2 carry on after the break.</p></div>
+          <button class="btn btn-sm btn-soft" id="addHoliday">+ Holiday</button></div>
+        <div id="holidayList" class="stack"></div>
       </section>
 
       <section class="card" id="bells">
