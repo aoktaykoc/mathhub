@@ -244,6 +244,13 @@ function colorFor(classId, courseId) {
   return cls?.color || App.course(cls?.courseId || courseId)?.color || '#98a2b3';
 }
 
+function defaultHolidays() {
+  return [
+    { id: uid('hol'), name: 'Winter break', start: '2026-12-20', end: '2026-12-31' },
+    { id: uid('hol'), name: 'Spring break', start: '2027-02-28', end: '2027-03-11' },
+    { id: uid('hol'), name: 'May holiday', start: '2027-05-16', end: '2027-05-20' },
+  ];
+}
 function seedState() {
   const today = isoDate();
   return {
@@ -263,6 +270,7 @@ function seedState() {
     variantNames: { ...DEFAULT_VARIANT_NAMES },
     timetable: {}, // "[w2:]<day>|<divisionId>:<label>" → classId
     cycle: { enabled: false, anchor: '' },
+    holidays: defaultHolidays(), // { id, name, start, end } — weeks fully inside are skipped by the cycle
     rooms: {}, // same keys as timetable → room for that period (overrides the class default)
     events: [], // { id, title, date, start, end, location, repeat, days, until, skip, color, notes }
     aiResults: [], // { id, lessonId, templateId, templateName, result, createdAt } — answers pasted back from Claude
@@ -302,6 +310,10 @@ const App = {
     }
     (s.classes || []).forEach(c => { if (!c.scheduleId) c.scheduleId = c.courseId === 'myp8' ? 'ms' : (s.schedules[1] || s.schedules[0])?.id || ''; });
     (s.classes || []).forEach(c => { if (!c.color) c.color = nextClassColor(s.classes); });
+    if (!s.holidays) { // holidays added: 1–5 Nov 2026 starts Week 1, holiday weeks no longer count
+      s.holidays = defaultHolidays();
+      s.cycle = { enabled: false, ...s.cycle, anchor: '2026-11-01' };
+    }
     const fresh = seedState();
     for (const k of Object.keys(fresh)) if (s[k] === undefined) s[k] = fresh[k];
     this.state = s;
@@ -336,22 +348,39 @@ function periodsOn(date) {
   }))).sort((a, b) => a.start.localeCompare(b.start) || a.schedId.localeCompare(b.schedId));
 }
 /* Two-week cycle: Week 1 timetable keys are "<day>|<period>", Week 2 keys are "w2:<day>|<period>".
-   `cycle.anchor` is any date in a Week 1; weeks then alternate from there. */
+   `cycle.anchor` is any date in a Week 1; school weeks then alternate from there.
+   Holiday weeks (every school day inside a holiday) are skipped, so the cycle resumes where it left off. */
 function cycleOn() { return !!(App.state.cycle?.enabled && App.state.cycle.anchor); }
+function holidayOn(date) { return (App.state.holidays || []).find(h => h.start && h.end && date >= h.start && date <= h.end) || null; }
+function isHolidayWeek(date) {
+  const ws = weekStart(date);
+  return workDays().every((_, i) => holidayOn(addDays(ws, i)));
+}
 function cycleWeekOf(date) {
   if (!cycleOn()) return 1;
-  const weeks = Math.round(daysBetween(weekStart(App.state.cycle.anchor), weekStart(date)) / 7);
-  return ((weeks % 2) + 2) % 2 === 0 ? 1 : 2;
+  const a = weekStart(App.state.cycle.anchor), w = weekStart(date);
+  let [from, to] = a <= w ? [a, w] : [w, a], weeks = 0;
+  for (let d = from; d < to; d = addDays(d, 7)) if (!isHolidayWeek(d)) weeks++;
+  return weeks % 2 === 0 ? 1 : 2;
+}
+// Start of the school week n school weeks after (or before, n < 0) the week containing date, skipping holiday weeks.
+function addSchoolWeeks(date, n) {
+  let d = weekStart(date);
+  const step = n < 0 ? -7 : 7;
+  for (let i = 0; i < Math.abs(n); i++) { d = addDays(d, step); while (isHolidayWeek(d)) d = addDays(d, step); }
+  return d;
 }
 function ttPrefix(week) { return week === 2 ? 'w2:' : ''; }
 function ttKey(date, periodId) { return `${ttPrefix(cycleWeekOf(date))}${weekdayKey(date)}|${periodId}`; }
-function classAt(date, periodId) { return App.state.timetable[ttKey(date, periodId)] || ''; }
+// No classes are taught on holiday days.
+function classAt(date, periodId) { return holidayOn(date) ? '' : App.state.timetable[ttKey(date, periodId)] || ''; }
 // Room for a period: the room typed in that timetable cell, otherwise the class's default room.
 function roomAt(date, periodId) {
   const k = ttKey(date, periodId);
   return App.state.rooms?.[k] || App.cls(App.state.timetable[k])?.room || '';
 }
-function cycleLabel(date) { return cycleOn() ? `Week ${cycleWeekOf(date)}` : ''; }
+function cycleLabel(date) { return cycleOn() ? (isHolidayWeek(date) ? 'Holiday' : `Week ${cycleWeekOf(date)}`) : ''; }
+function cycleTone(date) { return isHolidayWeek(date) ? 'success' : cycleWeekOf(date) === 1 ? 'info' : 'warning'; }
 
 // Periods on this date with the class taught in each ('' when free).
 function slotsOn(date) {

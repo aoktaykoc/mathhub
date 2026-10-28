@@ -2,3 +2,9 @@
 *.docx
 *.xlsx
 ~$*
+
+# Teaching materials (answer keys, teacher packs) and printouts — keep off the public site
+Grade */
+Lesson_*_Package/
+*.pdf
+*.tex
