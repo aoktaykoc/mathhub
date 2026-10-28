@@ -17,7 +17,7 @@
     if (!cls) return '';
     const saved = S.classLevels[cls.id];
     if (saved && levelKeys().has(saved)) return saved;
-    const guess = { myp8: 'myp8', myp9: 'myp9|Standard', dpaisl: 'dp-ai|SL' }[cls.courseId] || '';
+    const guess = levelForCourse(cls.courseId);
     return levelKeys().has(guess) ? guess : '';
   }
 
@@ -142,7 +142,7 @@
     const cls = App.cls(F.classId);
     const p = App.periodOn(F.periodId, F.date);
     const outs = selectedOutcomeTexts();
-    const color = colorFor(F.classId, courseForCurriculum(parseLevel(F.level).cid));
+    const color = colorFor(F.classId, courseForCurriculum(parseLevel(F.level).cid, parseLevel(F.level).track));
     $('#preview').innerHTML = `<div class="bl-preview" style="--c:${esc(color)}">
       <div class="small muted">${esc([cls?.name, levelLabel(F.level)].filter(Boolean).join(' · ') || 'No class or level yet')}</div>
       <h3>${esc(F.title || 'Untitled lesson')}</h3>
@@ -229,10 +229,10 @@
     const outs = hit ? hit.topic.outcomes.filter(o => F.outcomeIds.has(o.id)) : [];
     const custom = F.custom.split('\n').map(s => s.trim()).filter(Boolean);
     const cls = App.cls(F.classId);
-    const { cid } = parseLevel(F.level);
+    const { cid, track } = parseLevel(F.level);
     const data = {
       date: F.date, periodId: F.periodId, classId: F.classId,
-      courseId: cls?.courseId || courseForCurriculum(cid) || '',
+      courseId: cls?.courseId || courseForCurriculum(cid, track) || '',
       title: F.title,
       objectives: [...outs.map(o => o.text), ...custom].map(t => `• ${t}`).join('\n'),
       duration: F.duration ? String(F.duration) : '',

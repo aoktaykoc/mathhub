@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Worksheet generator · MathHub</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <meta name="theme-color" content="#3b5bdb">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
   <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
@@ -26,7 +24,12 @@
       <div class="ws-layout">
         <aside class="ws-controls">
           <section class="card stack" style="gap:.8rem">
-            <label>Course<select id="wsCourse"></select></label>
+            <div class="tabs" role="tablist" id="wsSourceTabs">
+              <button class="tab" data-source="course" role="tab">By course</button>
+              <button class="tab" data-source="library" role="tab">Curriculum library</button>
+            </div>
+            <label data-for="course">Course<select id="wsCourse"></select></label>
+            <label data-for="library" hidden>Curriculum &amp; level<select id="wsLevelKey"></select></label>
             <label>Worksheet title<input id="wsTitle" placeholder="e.g. Linear equations practice"></label>
             <div>
               <div class="card-head" style="margin-bottom:.35rem"><label style="margin:0">Topics & number of questions</label>
@@ -57,6 +60,12 @@
                 <select id="wsLvlMark"><option value="">No</option><option value="1">Yes</option></select>
               </label>
             </div>
+            <label>Questions written by
+              <select id="wsEngine">
+                <option value="ai">Claude — every topic, with figures (copy–paste)</option>
+                <option value="instant">Instant built-in generators (no AI; Claude only for topics without one)</option>
+              </select>
+            </label>
             <label class="inline"><input type="checkbox" id="wsShuffle"> Shuffle all questions into one section</label>
             <label>Your own questions (optional, one per line; add the answer after “||”; LaTeX typed as \( … \) goes into the .tex file unchanged)
               <textarea id="wsCustom" rows="3" placeholder="A phone costs $480 after a 20% discount. Find the original price. || $600"></textarea></label>
@@ -74,11 +83,47 @@
             <button class="btn btn-primary" id="printWs">Print worksheet</button>
             <button class="btn btn-ghost" id="printBoth">Print + answer key</button>
             <button class="btn btn-ghost" id="printKey">Answer key only</button>
+            <button class="btn btn-ghost" id="editTex" title="See and edit the LaTeX code of the worksheet and answer key">Edit LaTeX</button>
             <button class="btn btn-ghost" id="texWs" title="Worksheet and answer key as one .tex file (pdflatex / Overleaf)">LaTeX (.tex)</button>
             <button class="btn btn-ghost" id="copyTex">Copy LaTeX</button>
             <button class="btn btn-ghost" id="saveWs">Save</button>
             <span class="muted small">Click the sheet to edit the text; click a formula to edit its LaTeX. To get a PDF, choose “Save as PDF” in the print window.</span>
           </div>
+          <section class="card stack no-print ai-panel" id="aiPanel" hidden>
+            <div class="card-head" style="margin:0"><h2>Questions from Claude</h2><span class="small muted" id="aiStatus"></span></div>
+            <div id="aiTopics"></div>
+            <ol class="ai-steps">
+              <li>Copy the prompt and paste it into Claude.
+                <div class="ai-row"><button class="btn btn-sm btn-primary" id="aiCopy">Copy prompt</button>
+                  <a class="btn btn-sm btn-ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude ↗</a>
+                  <button class="link" id="aiShow">Show prompt</button>
+                  <label class="inline small" style="margin-left:auto">Figures
+                    <select id="aiFigs" style="width:auto;padding:.2rem .4rem">
+                      <option value="auto">where they help</option>
+                      <option value="many">in most questions</option>
+                      <option value="none">none</option>
+                    </select></label></div>
+                <div class="ai-row small"><label class="inline" title="Adds the best-matching passages from your Material library, so Claude matches your level, notation and style"><input type="checkbox" id="aiMat"> Add excerpts from my materials</label>
+                  <span class="muted" id="aiMatInfo"></span><a class="small" href="materials.html" style="margin-left:auto">Material library →</a></div>
+                <textarea id="aiPrompt" rows="12" readonly hidden spellcheck="false"></textarea></li>
+              <li>Paste Claude’s whole reply below and add it. Do this before you edit the sheet text — adding redraws the sheet.
+                <textarea id="aiReply" rows="5" spellcheck="false" placeholder="=== TOPIC 2.1 ===&#10;INSTR: …&#10;Q[L1]: …&#10;A: …"></textarea>
+                <div class="ai-row"><button class="btn btn-sm btn-primary" id="aiAdd">Add to worksheet</button></div>
+                <div class="ai-fix" id="aiFix" hidden>
+                  <strong>Claude wrote its own LaTeX document</strong> instead of the format this page reads. Send Claude the message below in the same chat, then paste its new reply here.
+                  <blockquote id="aiFixMsg"></blockquote>
+                  <button class="btn btn-sm btn-soft" id="aiFixCopy">Copy message</button>
+                </div></li>
+            </ol>
+          </section>
+          <section class="card stack no-print tex-panel" id="texPanel" hidden>
+            <div class="card-head" style="margin:0"><h2>LaTeX code</h2><span class="small muted" id="texStatus"></span></div>
+            <p class="small muted" style="margin:0"><strong>Not for Claude’s reply</strong> — that goes in “Questions from Claude” above. This is the code of the sheet below — worksheet first, answer key after <code>\newpage</code>. Add, remove or change <code>\item</code> lines (questions and answers), headings or instructions, then click <strong>Apply</strong>: the sheet, print and PDF follow the code. “New questions” and “Add to worksheet” rebuild the sheet, so apply and save your edits last.</p>
+            <textarea id="texSrc" rows="22" spellcheck="false" wrap="off"></textarea>
+            <div class="ai-row"><button class="btn btn-sm btn-primary" id="texApply">Apply to sheet</button>
+              <button class="btn btn-sm btn-ghost" id="texReload">Reload from sheet</button>
+              <button class="btn btn-sm btn-ghost" id="texClose">Close</button></div>
+          </section>
           <div id="sheets"><div class="ws-empty">Choose topics on the left and click <strong>Generate worksheet</strong>.</div></div>
         </section>
       </div>
@@ -86,9 +131,13 @@
   </div>
 </div>
 <script src="assets/js/core.js"></script>
+<script src="assets/js/curricula.js"></script>
 <script src="assets/js/generators.js"></script>
 <script src="assets/vendor/katex/katex.min.js"></script>
+<script src="assets/js/tikz.js"></script>
 <script src="assets/js/latex.js"></script>
+<script src="assets/js/wsai.js"></script>
+<script src="assets/js/matindex.js"></script>
 <script src="assets/js/worksheets.js"></script>
 </body>
 </html>

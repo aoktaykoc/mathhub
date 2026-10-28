@@ -49,6 +49,29 @@
       unknown.size ? `<div class="empty-hint">Unknown placeholder(s): ${[...unknown].map(k => `<code>{{${esc(k)}}}</code>`).join(' ')}. Check the spelling in the template.</div>` : '',
       empty.length ? `<p class="small muted" style="margin:0 0 .5rem">Not filled in: ${empty.map(k => esc(PLACEHOLDERS[k].split(' (')[0])).join(', ')}.</p>` : '',
     ].join('');
+    clearTimeout(matTimer); matTimer = setTimeout(addMaterials, 500);
+  }
+
+  /* ---------- excerpts from the Material library (matindex.js), appended to the prompt ---------- */
+  let matTimer, matRun = 0;
+  const copyBtns = on => ['#copyPrompt', '#copyOpen'].forEach(s => { $(s).disabled = !on; });
+  async function addMaterials() {
+    const run = ++matRun;
+    $('#matInfo').textContent = '';
+    copyBtns(true);
+    const query = [V.topic, V.outcomes, V.unit].filter(x => x && x.trim()).join('. ');
+    if (!$('#matCtx').checked || !query) return;
+    copyBtns(false);
+    $('#matInfo').textContent = 'Finding matching passages…';
+    try {
+      const { text, count } = await MatIndex.context([query], { perQuery: 5, maxChars: 6000 });
+      if (run !== matRun) return;
+      if (!count) { $('#matInfo').textContent = 'No matching passages in the Material library.'; return; }
+      $('#promptOut').value += `\n\nYOUR OWN MATERIALS\nExcerpts from my existing lessons and worksheets on this topic (from my material library). Use them to match my level, notation, style and contexts; build on them rather than repeating them.\n\n${text}`;
+      $('#matInfo').textContent = `${count} passage${count > 1 ? 's' : ''} added`;
+    } catch (e) {
+      if (run === matRun) $('#matInfo').textContent = `Could not add materials: ${e.message}`;
+    } finally { if (run === matRun) copyBtns(true); }
   }
 
   /* ---------- saved results ---------- */
@@ -200,6 +223,8 @@
   $$('[data-v]').forEach(el => el.addEventListener('input', () => { V[el.dataset.v] = el.value; renderPrompt(); }));
   $('#fTemplate').addEventListener('change', e => { prefs.templateId = e.target.value; App.save(true); renderPrompt(); });
   $('#manageTpl').onclick = manageTemplates;
+  $('#matCtx').checked = !!prefs.matCtx;
+  $('#matCtx').addEventListener('change', () => { prefs.matCtx = $('#matCtx').checked; App.save(true); addMaterials(); });
   $('#copyPrompt').onclick = () => copyText($('#promptOut').value);
   $('#copyOpen').onclick = () => copyPromptAndOpenClaude($('#promptOut').value);
   $('#viewSeg').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });

@@ -1,16 +1,46 @@
 (() => {
   const S = App.state;
+  ensureCurricula();
   let current = (location.hash || '').slice(1);
   if (!App.course(current)) current = S.courses[0]?.id;
   const openUnits = new Set();
 
+  // Course order is S.courses order, which every page's lists follow. Drag a tab, or use ← → next to “Edit course”.
+  function moveCourse(id, to) {
+    const from = S.courses.findIndex(c => c.id === id);
+    if (from < 0 || to < 0 || to >= S.courses.length || to === from) return;
+    const [c] = S.courses.splice(from, 1);
+    S.courses.splice(to, 0, c);
+    App.save(); render();
+  }
   function renderTabs() {
     $('#tabs').innerHTML = S.courses.map(c =>
-      `<button class="tab ${c.id === current ? 'active' : ''}" role="tab" aria-selected="${c.id === current}" style="--c:${esc(c.color)}" data-id="${c.id}" title="${esc(c.name)}"><i class="dot" style="background:${esc(c.color)}"></i>${esc(c.short)}</button>`).join('');
-    $$('#tabs .tab').forEach(t => t.onclick = () => { current = t.dataset.id; history.replaceState(null, '', `#${current}`); render(); });
+      `<button class="tab ${c.id === current ? 'active' : ''}" role="tab" aria-selected="${c.id === current}" style="--c:${esc(c.color)}" data-id="${c.id}" title="${esc(c.name)} — drag to reorder" draggable="true"><i class="dot" style="background:${esc(c.color)}"></i>${esc(c.short)}</button>`).join('');
+    $$('#tabs .tab').forEach(t => {
+      t.onclick = () => { current = t.dataset.id; history.replaceState(null, '', `#${current}`); render(); };
+      t.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', t.dataset.id); e.dataTransfer.effectAllowed = 'move'; t.classList.add('dragging'); });
+      t.addEventListener('dragend', () => { t.classList.remove('dragging'); $$('#tabs .tab').forEach(x => x.classList.remove('drop-before', 'drop-after')); });
+      t.addEventListener('dragover', e => {
+        e.preventDefault();
+        const r = t.getBoundingClientRect(), after = e.clientX > r.left + r.width / 2;
+        $$('#tabs .tab').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+        t.classList.add(after ? 'drop-after' : 'drop-before');
+      });
+      t.addEventListener('drop', e => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        if (!id || id === t.dataset.id) return;
+        const after = t.classList.contains('drop-after');
+        const from = S.courses.findIndex(c => c.id === id);
+        let to = S.courses.findIndex(c => c.id === t.dataset.id) + (after ? 1 : 0);
+        if (from < to) to--;
+        moveCourse(id, to);
+      });
+    });
   }
 
-  function unitCard(c, u, i) {
+  // linked: the course takes its units and topics from the Curriculum library (edited there, not here)
+  function unitCard(c, u, i, linked) {
     const done = u.topics.filter(t => t.done).length;
     const pct = u.topics.length ? Math.round(done / u.topics.length * 100) : 0;
     const lessons = S.lessons.filter(l => l.unitId === u.id);
@@ -42,15 +72,15 @@
             <button class="btn btn-sm btn-ghost" data-act="edit" data-id="${u.id}">Edit unit</button>
             <button class="btn btn-sm btn-ghost" data-act="lesson" data-id="${u.id}">+ Lesson</button>
             <a class="btn btn-sm btn-ghost" href="worksheets.html?course=${c.id}">Worksheet</a>
-            <button class="btn btn-sm btn-ghost" data-act="up" data-id="${u.id}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
+            ${linked ? '' : `<button class="btn btn-sm btn-ghost" data-act="up" data-id="${u.id}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
             <button class="btn btn-sm btn-ghost" data-act="down" data-id="${u.id}" ${i === c.units.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
-            <button class="btn btn-sm btn-danger-ghost" data-act="del" data-id="${u.id}">Delete</button>
+            <button class="btn btn-sm btn-danger-ghost" data-act="del" data-id="${u.id}">Delete</button>`}
           </div>
         </div>
         <div>
           <h3 style="margin-bottom:.4rem">Topics & coverage</h3>
-          <ul class="topic-list">${u.topics.map(t => `<li class="${t.done ? 'done' : ''}"><input type="checkbox" data-topic="${t.id}" data-unit-id="${u.id}" ${t.done ? 'checked' : ''} aria-label="Covered"><span>${esc(t.text)}</span><button class="icon-btn sm" data-rm-topic="${t.id}" data-unit-id="${u.id}" aria-label="Remove topic">×</button></li>`).join('') || '<li class="muted small">No topics yet.</li>'}</ul>
-          <form class="form-row" data-add-topic="${u.id}"><input placeholder="Add a topic…" aria-label="New topic"><button class="btn btn-sm btn-soft" type="submit" style="flex:0">Add</button></form>
+          <ul class="topic-list">${u.topics.map(t => `<li class="${t.done ? 'done' : ''}"><input type="checkbox" data-topic="${t.id}" data-unit-id="${u.id}" ${t.done ? 'checked' : ''} aria-label="Covered"><span>${esc(t.text)}</span>${linked ? '' : `<button class="icon-btn sm" data-rm-topic="${t.id}" data-unit-id="${u.id}" aria-label="Remove topic">×</button>`}</li>`).join('') || '<li class="muted small">No topics yet.</li>'}</ul>
+          ${linked ? '' : `<form class="form-row" data-add-topic="${u.id}"><input placeholder="Add a topic…" aria-label="New topic"><button class="btn btn-sm btn-soft" type="submit" style="flex:0">Add</button></form>`}
           ${lessons.length ? `<h3 style="margin:1rem 0 .3rem">Lessons in this unit</h3><ul class="topic-list">${lessons.sort((a, b) => a.date.localeCompare(b.date)).slice(-6).map(l => `<li><span class="muted small nowrap">${esc(fmtDate(l.date, { day: 'numeric', month: 'short' }))}</span><span>${esc(l.title)}</span></li>`).join('')}</ul>` : ''}
         </div>
       </div>
@@ -65,27 +95,36 @@
     const totalWeeks = c.units.reduce((s, u) => s + (Number(u.weeks) || 0), 0);
     const totalHours = c.units.reduce((s, u) => s + (Number(u.hours) || 0), 0);
     const lessons = S.lessons.filter(l => l.courseId === c.id);
-    const note = c.framework === 'Custom' ? '<div class="empty-hint">This is your own curriculum: add, reorder and edit units freely. Any unit can use MYP-style fields if you wish (switch the course framework under “Edit course”).</div>' : '';
+    const lib = courseLibrary(S, c);
+    const note = lib
+      ? `<div class="empty-hint">📚 Units and topics come from the <a href="curriculum.html#${esc(lib.cur.id)}">Curriculum library — ${esc(levelLabel(c.curriculumLevel))}</a>, so they are always the same as there. Add, rename or remove units and topics in the library; here you plan them (status, weeks, concepts, notes) and tick the topics you have covered.</div>`
+      : c.framework === 'Custom' ? '<div class="empty-hint">This is your own curriculum: add, reorder and edit units freely. Any unit can use MYP-style fields if you wish (switch the course framework under “Edit course”). To take the units from the Curriculum library instead, choose a level under “Edit course”.</div>' : '';
+    $('#addUnit').hidden = !!lib;
     $('#coursePanel').innerHTML = `${note}
       <div class="card-head"><div><h2>${esc(c.name)}</h2><p class="muted small">${esc(c.framework === 'DP' ? 'IB Diploma Programme' : c.framework === 'MYP' ? 'IB Middle Years Programme' : 'School-designed course')}</p></div>
-        <button class="btn btn-sm btn-ghost" id="editCourse">Edit course</button></div>
+        <div class="nowrap"><button class="btn btn-sm btn-ghost" id="courseLeft" aria-label="Move this course earlier" title="Move earlier in the course order" ${S.courses[0] === c ? 'disabled' : ''}>←</button>
+          <button class="btn btn-sm btn-ghost" id="courseRight" aria-label="Move this course later" title="Move later in the course order" ${S.courses[S.courses.length - 1] === c ? 'disabled' : ''}>→</button>
+          <button class="btn btn-sm btn-ghost" id="editCourse">Edit course</button></div></div>
       <div class="course-summary">
         <div class="card"><div class="stat-label">Coverage</div><div class="stat-value">${p.pct}%</div><div class="stat-sub">${p.done} of ${p.total} topics</div></div>
         <div class="card"><div class="stat-label">Units</div><div class="stat-value">${c.units.length}</div><div class="stat-sub">${c.units.filter(u => u.status === 'complete').length} complete</div></div>
-        <div class="card"><div class="stat-label">${totalHours ? 'Teaching hours' : 'Planned weeks'}</div><div class="stat-value">${totalHours || totalWeeks || '—'}</div><div class="stat-sub">${totalHours ? 'syllabus + toolkit' : 'across all units'}</div></div>
+        <div class="card"><div class="stat-label">${totalHours ? 'Teaching hours' : 'Planned weeks'}</div><div class="stat-value">${totalHours || totalWeeks || '—'}</div><div class="stat-sub">across all units</div></div>
         <div class="card"><div class="stat-label">Lesson plans</div><div class="stat-value">${lessons.length}</div><div class="stat-sub">${lessons.filter(l => l.status === 'taught').length} taught</div></div>
       </div>
-      <div id="units">${c.units.map((u, i) => unitCard(c, u, i)).join('') || '<p class="empty">No units yet — add one.</p>'}</div>`;
+      <div id="units">${c.units.map((u, i) => unitCard(c, u, i, !!lib)).join('') || '<p class="empty">No units yet — add one.</p>'}</div>`;
     $('#editCourse').onclick = () => editCourse(c);
+    $('#courseLeft').onclick = () => moveCourse(c.id, S.courses.indexOf(c) - 1);
+    $('#courseRight').onclick = () => moveCourse(c.id, S.courses.indexOf(c) + 1);
   }
 
   function editUnit(c, u) {
     const isNew = !u;
     u = u ? JSON.parse(JSON.stringify(u)) : makeUnit('');
     const isMYP = c.framework === 'MYP';
+    const linked = !isNew && !!courseLibrary(S, c); // title and topics belong to the Curriculum library
     const opt = (v, sel) => `<option ${v === sel ? 'selected' : ''}>${esc(v)}</option>`;
     const body = `<div class="form-grid">
-      <label class="span-2">Unit title<input data-f="title" value="${esc(u.title)}"></label>
+      <label class="span-2">Unit title<input data-f="title" value="${esc(u.title)}" ${linked ? 'readonly title="Rename it in the Curriculum library"' : ''}></label>
       <label>Weeks<input type="number" min="0" step="0.5" data-f="weeks" value="${esc(u.weeks)}"></label>
       <label>Teaching hours<input type="number" min="0" data-f="hours" value="${esc(u.hours)}"></label>
       ${!isMYP ? `<label class="span-2">Syllabus reference<input data-f="syllabusRef" value="${esc(u.syllabusRef)}" placeholder="e.g. SL 4.1–4.4"></label>` : ''}
@@ -95,7 +134,8 @@
       <div class="span-2"><label style="margin-bottom:.3rem">Related concepts</label><div class="chip-group" data-rel>${MYP.relatedConcepts.map(r => `<label class="chip-check"><input type="checkbox" value="${esc(r)}" ${u.relatedConcepts.includes(r) ? 'checked' : ''}> ${esc(r)}</label>`).join('')}</div></div>
       <div class="span-2"><label style="margin-bottom:.3rem">Criteria assessed</label><div class="chip-group" data-crit>${Object.entries(MYP.criteria).map(([k, v]) => `<label class="chip-check"><input type="checkbox" value="${k}" ${u.criteria.includes(k) ? 'checked' : ''}> ${k} · ${esc(v)}</label>`).join('')}</div></div>
       <label class="span-2">Statement of inquiry<textarea data-f="soi" rows="2">${esc(u.soi)}</textarea></label>` : ''}
-      <label class="span-2">Topics (one per line)<textarea data-topics rows="5">${esc(u.topics.map(t => t.text).join('\n'))}</textarea></label>
+      ${linked ? `<p class="span-2 small muted" style="margin:0">Topics come from the Curriculum library (${u.topics.length}); tick covered topics on the unit card.</p>`
+        : `<label class="span-2">Topics (one per line)<textarea data-topics rows="5">${esc(u.topics.map(t => t.text).join('\n'))}</textarea></label>`}
       <label class="span-2">Notes, resources & links<textarea data-f="notes" rows="3">${esc(u.notes)}</textarea></label>
     </div>`;
     openModal({
@@ -108,8 +148,10 @@
             u.relatedConcepts = $$('[data-rel] input:checked', dlg).map(i => i.value);
             u.criteria = $$('[data-crit] input:checked', dlg).map(i => i.value);
           }
-          const lines = $('[data-topics]', dlg).value.split('\n').map(s => s.trim()).filter(Boolean);
-          u.topics = lines.map(text => u.topics.find(t => t.text === text) || { id: uid('t'), text, done: false });
+          if (!linked) {
+            const lines = $('[data-topics]', dlg).value.split('\n').map(s => s.trim()).filter(Boolean);
+            u.topics = lines.map(text => u.topics.find(t => t.text === text) || { id: uid('t'), text, done: false });
+          }
           if (isNew) c.units.push(u); else c.units = c.units.map(x => x.id === u.id ? u : x);
           openUnits.add(u.id);
           App.save(); render(); toast('Unit saved', 'success');
@@ -128,6 +170,10 @@
         <label>Short label<input data-f="short" value="${esc(c.short)}" maxlength="12" placeholder="e.g. MYP 10"></label>
         <label>Framework<select data-f="framework">${['MYP', 'DP', 'Custom'].map(f => `<option ${f === c.framework ? 'selected' : ''}>${f}</option>`).join('')}</select></label>
         <label>Colour<input type="color" data-f="color" value="${esc(c.color)}"></label>
+        <label class="span-2">Units from the Curriculum library
+          <select data-f="curriculumLevel"><option value="">None — this course has its own units</option>${curriculumLevels().map(l =>
+            `<option value="${esc(l.key)}" ${l.key === c.curriculumLevel ? 'selected' : ''}>${esc(l.label)} — ${esc(l.c.name)}${l.c.units.length ? '' : ' (no units yet)'}</option>`).join('')}</select>
+          <span class="small muted">Linked courses always show the same units and topics as the library.</span></label>
       </div>`,
       actions: [
         ...(isNew || S.courses.length < 2 ? [] : [{ label: 'Delete course', cls: 'btn-danger-ghost', onClick: () => {
@@ -141,6 +187,7 @@
           if (!c.name) { toast('Course name is required', 'error'); return false; }
           if (!c.short) c.short = c.name.slice(0, 10);
           if (isNew) { S.courses.push(c); S.classes.push({ id: uid('cls'), name: c.short, courseId: c.id, scheduleId: S.schedules[0]?.id || '', color: nextClassColor(S.classes) }); current = c.id; }
+          syncCourseUnits(S); // a new library link brings its units now
           App.save(); render(); toast('Course saved', 'success');
         } },
       ],

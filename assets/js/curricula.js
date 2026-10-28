@@ -195,141 +195,772 @@ const AI_UNITS = [
   ]],
 ];
 
-/* ISL Grade 9 (MYP Year 4) syllabus, in the school's unit order.
-   Unit: [title, { weeks, assessment }, topics]
-   Topic: [code, title, MYP strand, lessons, tracks, [[outcome, lessons?], …]] — tracks [] = Standard & Extended */
-const MYP_STRANDS = ['Number', 'Algebra', 'Geometry & trigonometry', 'Statistics & probability'];
-const G9_UNITS = [
-  ['Unit 1 — All About Numbers; Solving the Unknown', { weeks: '7', assessment: 'Criteria A and D (possibly B and C)' }, [
-    ['1.1', 'Number systems', 'Number', 7, [], [
-      ['Identify and classify numbers as rational or irrational, and convert between forms (fractions, decimals, radicals)', 1],
-      ['Simplify radical expressions by performing operations with surds (add, subtract, multiply, divide), including higher-order roots', 3],
-      ['Apply and manipulate the laws of exponents for integer and fractional powers', 3]]],
-    ['1.2', 'Algebraic expressions', 'Algebra', 4, [], [
-      ['Simplify algebraic expressions using the distributive property and combining like terms', 2],
-      ['Expand polynomial products and factorise binomial and trinomial expressions with a common factor', 2]]],
-    ['1.3', 'Equations and inequalities', 'Algebra', 6, [], [
-      ['Solve single-variable linear equations, including those with decimals and simple algebraic fractions', 1],
-      ['Solve literal equations by isolating a variable in terms of other variables', 1],
-      ['Solve and graph linear inequalities on a number line', 1],
-      ['Solve systems of linear equations using substitution, elimination and graphical methods', 3]]],
-    ['1.E', 'Further equations and inequalities', 'Algebra', null, ['Extended'], [
-      ['Solve exponential equations using properties of exponents'],
-      ['Solve complex algebraic equations involving multiple steps, nested expressions or multiple variables'],
-      ['Solve linear and non-linear inequalities and represent solutions graphically or in interval notation'],
-      ['Solve absolute value equations and inequalities, including compound inequalities'],
-      ['Solve problems using linear programming']]],
-  ]],
-  ['Unit 2 — Let’s shape the world around us', { weeks: '6', assessment: 'Criteria A and B' }, [
-    ['2.1', 'Introduction to functions and function notation', 'Algebra', 3, [], [
-      ['Understand a function as a relation in which each input has exactly one output', 1],
-      ['Use and interpret function notation (e.g. f(x)) correctly', 1],
-      ['Distinguish between expressions, equations and functions', 1]]],
-    ['2.2', 'Domain and range', 'Algebra', 2, [], [
-      ['Determine the domain (possible inputs) and range (possible outputs) of linear and quadratic functions'],
-      ['Express domain and range in set notation or with inequalities'],
-      ['Analyse graphs to identify appropriate domain and range values based on context']]],
-    ['2.3', 'Evaluating functions at x = a', 'Algebra', 2, [], [
-      ['Substitute a given value into a function to find the output (e.g. evaluate f(3), f(x + 3))', 1],
-      ['Use function expressions to solve problems in real-world contexts', 1]]],
-    ['2.4', 'Graphing linear functions', 'Algebra', 2, [], [
-      ['Plot linear functions using slope–intercept form y = mx + b'],
-      ['Interpret the slope as a rate of change and the y-intercept as the starting value in context'],
-      ['Analyse the effects of changing m and b on the graph of a linear function']]],
-    ['2.5', 'Graphing quadratic functions', 'Algebra', 2, [], [
-      ['Identify and plot the key features of a quadratic function: vertex, axis of symmetry, x-intercepts (roots or zeros) and y-intercept'],
-      ['Sketch accurate parabolas from different forms (standard, vertex, factored)']]],
-    ['2.6', 'Moving between the three forms of quadratic functions', 'Algebra', 2, [], [
-      ['Convert from factored form and vertex form to standard form by expanding'],
-      ['Identify and interpret key features from each form (e.g. roots from factored form, vertex from vertex form)']]],
-    ['2.E1', 'Applying quadratic functions in real-life contexts', 'Algebra', 2, ['Extended'], [
-      ['Model real-world situations using quadratic functions (e.g. projectile motion, area problems, revenue optimisation)'],
-      ['Interpret the meaning of key features (vertex, axis of symmetry, x- and y-intercepts) in a real-life scenario'],
-      ['Use graphing calculator methods to solve application problems involving maximum and minimum values'],
-      ['Analyse and communicate solutions clearly with appropriate units and context']]],
-    ['2.E2', 'Transformations of functions', 'Algebra', null, ['Extended'], [
-      ['Identify and describe how vertical and horizontal shifts in a function’s equation affect its graph'],
-      ['Identify and describe how vertical and horizontal stretches or compressions affect a function’s graph']]],
-  ]],
-  ['Unit 3 — Shape and Space; Patterns in the World around us', { weeks: '8–9', assessment: 'Criterion B (scale factors for surface area and volume); Criterion D investigation practice' }, [
-    ['3.1', 'Polygon angle sum theorem', 'Geometry & trigonometry', 1, [], [
-      ['Apply the polygon angle sum theorem to find missing angles, including in regular polygons'],
-      ['Solve problems involving multiple triangles sharing angles or sides']]],
-    ['3.2', 'Understanding and applying angle relationships', 'Geometry & trigonometry', 1, [], [
-      ['Identify and apply the properties of angles formed by parallel lines cut by a transversal (alternate interior, corresponding, etc.)'],
-      ['Solve problems involving angle relationships in geometric figures']]],
-    ['3.3', 'Classifying and analysing quadrilaterals', 'Geometry & trigonometry', 1, [], [
-      ['Use properties of parallelograms, rectangles, rhombuses and trapezoids to find missing angles and sides'],
-      ['Classify quadrilaterals based on side lengths, angle measures and symmetry']]],
-    ['3.4', 'Applying the Pythagorean theorem', 'Geometry & trigonometry', 1, [], [
-      ['Use the Pythagorean theorem and its converse to verify right-angled triangles and find missing sides'],
-      ['Apply the theorem in real-world and coordinate geometry problems, including 3D']]],
-    ['3.5', 'Similarity', 'Geometry & trigonometry', null, [], [
-      ['Use scale factors and equal angles to identify and work with similar shapes'],
-      ['Recognise that two pairs of equal corresponding angles are enough for two triangles to be similar']]],
-    ['3.6', 'Coordinate geometry', 'Geometry & trigonometry', null, [], [
-      ['Calculate distances between points in the coordinate plane using the distance formula'],
-      ['Use coordinates to verify geometric properties and solve problems']]],
-    ['3.7', 'Composite 3D figures: surface area and volume', 'Geometry & trigonometry', null, [], [
-      ['Decompose complex shapes to calculate total area, perimeter, surface area and volume'],
-      ['Use known dimensions and formulae to find unknown sides or angles before finding area or perimeter']]],
-    ['3.8', 'Trigonometric problem solving', 'Geometry & trigonometry', null, [], [
-      ['Use sine, cosine and tangent ratios to find unknown sides or angles in right-angled triangles'],
-      ['Apply trigonometry to real-life measurement problems involving right-angled triangles and composite shapes']]],
-    ['3.9', 'Multi-step geometric reasoning', 'Geometry & trigonometry', null, [], [
-      ['Use logical steps and geometric relationships to solve problems that combine several skills (e.g. identifying shapes, using trigonometry and applying Pythagoras)']]],
-    ['3.E', 'Sine and cosine rules: missing sides and angles', 'Geometry & trigonometry', null, ['Extended'], [
-      ['Identify when to use the sine rule and the cosine rule from the given information (SAS, ASA, SSS, etc.)'],
-      ['Use the sine rule to find missing sides and angles in non-right-angled triangles'],
-      ['Use the cosine rule to find unknown sides or angles when two sides and the included angle, or all three sides, are known'],
-      ['Apply the sine and cosine rules accurately to word problems involving triangles']]],
-  ]],
-  ['Unit 4 — Fact or Fiction: What are the chances', { weeks: '9–10', assessment: 'Criteria C and D' }, [
-    ['4.1', 'Types of data', 'Statistics & probability', null, [], [
-      ['Distinguish between qualitative (categorical) and quantitative (numerical) data'],
-      ['Identify and compare primary and secondary data sources based on how the data were collected']]],
-    ['4.2', 'Organising and displaying data', 'Statistics & probability', null, [], [
-      ['Collect and organise data in frequency tables'],
-      ['Create and interpret dot plots for quantitative data and bar charts for categorical data'],
-      ['Create and interpret histograms for grouped quantitative data'],
-      ['Create and interpret pie charts to represent data as parts of a whole'],
-      ['Create and interpret stem-and-leaf plots that keep the actual data values']]],
-    ['4.3', 'Analysing data sets', 'Statistics & probability', null, [], [
-      ['Calculate and interpret measures of central tendency: mean, median and mode'],
-      ['Calculate and interpret measures of spread: range, interquartile range (IQR) and mean absolute deviation (MAD) as an introduction to standard deviation'],
-      ['Identify outliers in data sets and explain their effect on the mean and spread'],
-      ['Construct and interpret box-and-whisker plots']]],
-    ['4.4', 'Understanding probability concepts', 'Statistics & probability', null, [], [
-      ['Define and use probability terms such as event, outcome and sample space'],
-      ['Calculate theoretical probabilities of single events using fractions, decimals and percentages'],
-      ['Understand and calculate the probability of complementary events using P(A′) = 1 − P(A)']]],
-    ['4.5', 'Experimental (empirical) probability', 'Statistics & probability', null, [], [
-      ['Conduct experiments and record outcomes to estimate probabilities experimentally'],
-      ['Calculate relative frequency and compare it with theoretical probability'],
-      ['Interpret discrepancies between theoretical and experimental results']]],
-    ['4.6', 'Using diagrams to solve probability problems', 'Statistics & probability', null, [], [
-      ['Create and interpret Venn diagrams to show relationships between sets and calculate combined probabilities'],
-      ['Draw and use tree diagrams to represent multi-stage probability experiments'],
-      ['Use the multiplication and addition rules to find probabilities of compound events']]],
-    ['4.E', 'Conditional probability', 'Statistics & probability', null, ['Extended'], [
-      ['Understand conditional probability as the probability of an event given that another event has already occurred'],
-      ['Use the conditional probability formula to calculate P(A | B)'],
-      ['Interpret conditional probability in real-world contexts (e.g. medical testing, surveys, quality control)'],
-      ['Distinguish between independent and dependent events by checking whether P(A | B) = P(A)'],
-      ['Use two-way tables, Venn diagrams and tree diagrams to calculate and visualise conditional probabilities'],
-      ['Solve word problems involving conditional probability with clear reasoning and correct notation']]],
-  ]],
-];
+/* ISL MYP 9 and MYP 10 curricula (school documents, September 2026), in the library's text format
+   (see parseCurriculumText below): ## unit, ### [Extended] code title, - outcome. */
+const MYP9_TEXT = String.raw`
+## Topic 1 — Number and algebra
+### 1.1 Number systems and representations
+- Identify and classify rational and irrational numbers
+- Convert between fractions, decimals and radicals
 
-function buildMypUnits(cid, units) {
-  return units.map(([title, meta, topics], ui) => ({
-    id: `${cid}-u${ui + 1}`, title, hours: null, weeks: meta.weeks || '', assessment: meta.assessment || '',
-    topics: topics.map(([code, ttitle, strand, lessons, tracks, outcomes]) => {
-      const tid = `${cid}-${code.replace('.', '-')}`;
-      return {
-        id: tid, code, title: ttitle, strand, lessons: lessons || null, tracks,
-        outcomes: outcomes.map(([text, n], i) => ({ id: `${tid}-o${i + 1}`, text, tracks: [], lessons: n || null })),
-      };
+### 1.2 Radicals and roots
+- Simplify radicals, including higher-order roots
+- Apply operations with radicals
+
+### 1.3 Laws of exponents
+- Apply laws of exponents with integer and fractional powers
+
+### 1.4 Algebraic expressions
+- Simplify algebraic expressions using the distributive property
+- Combine like terms
+- Expand polynomial products
+- Factorise binomial and trinomial expressions with a common factor
+
+### 1.5 Linear equations
+- Solve single-variable linear equations
+- Solve equations involving decimals and simple algebraic fractions
+- Solve literal equations by making a variable the subject
+
+### 1.6 Inequalities
+- Solve linear inequalities
+- Represent solutions graphically on a number line
+
+### 1.7 Systems of linear equations
+- Solve systems of linear equations using substitution
+- Solve systems of linear equations using elimination
+- Solve systems of linear equations graphically
+
+### [Extended] 1.8 Exponential equations
+- Solve exponential equations
+
+### [Extended] 1.9 Further linear equations
+- Solve complex multi-step equations involving nested expressions or multiple variables
+
+### [Extended] 1.10 Further inequalities and absolute value
+- Solve linear and non-linear inequalities
+- Represent solutions using interval notation
+- Solve absolute value equations and inequalities
+- Solve compound inequalities
+
+### [Extended] 1.11 Linear programming
+- Solve linear programming problems
+
+## Topic 2 — Functions
+### 2.1 Introduction to functions
+- Understand a function as a relation where each input has one output
+- Use and interpret function notation
+- Distinguish between expressions, equations and functions
+
+### 2.2 Domain and range
+- Determine the domain and range of linear and quadratic functions
+- Express domain and range using set notation or inequalities
+- Determine appropriate domain and range from graphs and contexts
+
+### 2.3 Evaluating functions
+- Evaluate functions for given input values
+- Substitute expressions into functions
+- Apply functions in real-world contexts
+
+### 2.4 Linear functions
+- Graph linear functions using slope-intercept form
+- Interpret slope as rate of change
+- Interpret the y-intercept as a starting value
+- Analyse the effects of changing slope and intercept
+
+### 2.5 Graphs and key features of quadratic functions
+- Graph quadratic functions
+- Identify the vertex
+- Identify the axis of symmetry
+- Identify x-intercepts and y-intercepts
+
+### 2.6 Forms of quadratic functions
+- Sketch quadratic functions from standard, vertex and factored forms
+- Convert factored form to standard form
+- Convert vertex form to standard form
+- Interpret key features from different forms
+
+### [Extended] 2.7 Quadratic modelling and transformations
+- Model real-world situations using quadratic functions
+- Solve problems involving maximum and minimum values
+- Analyse vertical and horizontal translations
+- Analyse vertical and horizontal stretches and compressions
+
+## Topic 3 — Geometry and trigonometry
+### 3.1 Angles and polygons
+- Apply the polygon angle sum theorem
+- Find missing angles in regular and irregular polygons
+- Apply angle relationships formed by parallel lines and transversals
+
+### 3.2 Quadrilaterals
+- Classify quadrilaterals using their properties
+- Apply properties of parallelograms, rectangles, rhombuses and trapezoids
+- Find missing sides and angles in quadrilaterals
+
+### 3.3 Pythagorean theorem
+- Apply the Pythagorean theorem to find missing sides
+- Apply the converse of the Pythagorean theorem
+- Apply the Pythagorean theorem in coordinate geometry
+- Apply the Pythagorean theorem in three-dimensional problems
+
+### 3.4 Similarity
+- Identify similar figures using corresponding angles and sides
+- Apply scale factors
+- Establish similarity of triangles using corresponding angles
+
+### 3.5 Coordinate geometry
+- Calculate distances between points
+- Use coordinates to verify geometric properties
+- Solve geometric problems in the coordinate plane
+
+### 3.6 Surface area and volume
+- Decompose composite figures
+- Calculate area and perimeter of composite figures
+- Calculate surface area and volume of composite 3D figures
+- Determine unknown dimensions before calculating area, surface area or volume
+
+### 3.7 Trigonometry
+- Use sine, cosine and tangent ratios
+- Find unknown sides in right-angled triangles
+- Find unknown angles in right-angled triangles
+- Apply trigonometry to real-life measurement problems
+- Apply trigonometry to composite figures
+
+### 3.8 Geometric reasoning
+- Combine geometric relationships to solve multi-step problems
+- Justify solutions using appropriate geometric reasoning
+
+### [Extended] 3.9 Non-right-angled triangle trigonometry
+- Apply the sine rule
+- Apply the cosine rule
+- Solve problems involving non-right-angled triangles
+
+## Topic 4 — Statistics and probability
+### 4.1 Types of data
+- Distinguish between qualitative and quantitative data
+- Distinguish between primary and secondary data
+
+### 4.2 Frequency tables and data displays
+- Organise data in frequency tables
+- Create and interpret dot plots
+- Create and interpret bar charts
+- Create and interpret histograms
+- Create and interpret pie charts
+- Create and interpret stem-and-leaf plots
+
+### 4.3 Box-and-whisker plots
+- Create and interpret box-and-whisker plots
+
+### 4.4 Measures of central tendency and dispersion
+- Calculate and interpret mean, median and mode
+- Calculate and interpret range
+- Calculate and interpret interquartile range
+- Calculate and interpret mean absolute deviation
+
+### 4.5 Outliers
+- Identify outliers
+- Analyse the effect of outliers on measures of centre and spread
+
+### 4.6 Probability concepts
+- Understand events, outcomes and sample spaces
+- Calculate theoretical probability
+- Express probabilities as fractions, decimals and percentages
+- Calculate probabilities of complementary events
+
+### 4.7 Experimental probability
+- Conduct probability experiments
+- Calculate experimental probability
+- Calculate relative frequency
+- Compare theoretical and experimental probability
+
+### 4.8 Compound probability
+- Use Venn diagrams to represent events
+- Use tree diagrams to represent multi-stage experiments
+- Apply addition rules to calculate probabilities
+- Apply multiplication rules to calculate probabilities
+
+### [Extended] 4.9 Conditional probability
+- Understand conditional probability
+- Calculate conditional probabilities
+- Distinguish between independent and dependent events
+- Use two-way tables to calculate conditional probabilities
+- Use Venn diagrams to calculate conditional probabilities
+- Use tree diagrams to calculate conditional probabilities
+- Solve contextual conditional probability problems
+`;
+
+const MYP10_TEXT = String.raw`
+## Topic 1 — Number and algebra
+### 1.1 Quadratic equations and intercepts
+- Solve quadratic equations by factorising
+- Solve quadratic equations using the quadratic formula
+- Identify when a quadratic equation is not factorable
+- Solve quadratic equations by completing the square
+- Find x- and y-intercepts of quadratic functions
+
+### 1.2 Algebraic identities and fractions
+- Apply standard algebraic identities
+- Simplify and manipulate algebraic fractions
+
+### 1.3 Exponential equations
+- Solve exponential equations using laws of exponents
+
+### 1.4 Logarithmic forms and laws
+- Understand exponential and logarithmic forms
+- Convert between exponential and logarithmic forms
+- Apply laws of logarithms
+
+### 1.5 Logarithmic equations and exponential models
+- Solve logarithmic equations
+- Use logarithms to solve exponential equations and models
+
+### 1.6 Sequences and series
+- Identify arithmetic sequences
+- Identify geometric sequences
+- Find the nth term of arithmetic and geometric sequences
+- Calculate sums of arithmetic series
+- Calculate sums of geometric series
+- Apply sequences and series to real-life problems
+
+### 1.7 Binomial expansion
+- Expand binomial expressions using the Binomial Theorem
+- Use Pascal’s Triangle to determine coefficients
+- Determine specific terms in a binomial expansion
+
+### [Extended] 1.8 Complex algebraic fractions
+- Work with complex algebraic fractions
+
+### [Extended] 1.9 Binomial expansion up to the fifth power
+- Expand binomial expressions up to the fifth power
+
+## Topic 2 — Functions
+### 2.1 Features of functions
+- Determine domain and range of linear, quadratic and exponential functions
+- Identify x- and y-intercepts
+- Analyse the shape and behaviour of functions
+- Interpret rates of change and growth patterns
+
+### 2.2 Quadratic functions
+- Convert between standard, factored and vertex forms
+- Identify roots from factored form
+- Identify the vertex from vertex form
+- Determine the number of zeros of a quadratic function
+- Construct quadratic functions from graphs, data and descriptions
+
+### 2.3 Exponential and logarithmic functions
+- Construct exponential functions from graphs, data and descriptions
+- Construct logarithmic functions from graphs
+- Interpret exponential and logarithmic models
+
+### 2.4 Sign diagrams
+- Construct sign diagrams
+- Determine intervals where a function is positive, negative or zero
+- Relate sign diagrams to intercepts and graph behaviour
+
+### 2.5 Composite functions
+- Understand composite functions
+- Evaluate composite functions
+- Determine the domain of composite functions
+
+### 2.6 Inverse functions
+- Determine whether a function has an inverse
+- Find inverse functions algebraically
+- Interpret inverse functions graphically
+- Understand reflection in the line \(y=x\)
+
+### 2.7 Graphing functions
+- Graph quadratic functions
+- Graph modulus/absolute-value functions
+- Graph exponential functions
+- Graph logarithmic functions
+- Identify domain, range, intercepts, symmetry, asymptotes and turning points
+- Determine points of intersection graphically
+
+### 2.8 Transformations of functions
+- Apply horizontal and vertical translations
+- Apply reflections
+- Apply stretches and compressions
+- Describe transformations algebraically and graphically
+
+### 2.9 Mathematical modelling
+- Create functions from verbal descriptions and data
+- Apply functions to real-world situations
+- Interpret models and make predictions from graphs
+
+## Topic 3 — Geometry and trigonometry
+### 3.1 Sine and cosine rules
+- Apply the sine rule
+- Apply the cosine rule
+- Determine when to use the sine or cosine rule
+- Solve non-right-angled triangles
+
+### 3.2 Applications of trigonometry
+- Solve problems involving angles of elevation and depression
+- Solve problems involving bearings
+- Solve multi-step 2D trigonometric problems
+- Decompose complex diagrams into solvable triangles
+
+### 3.3 Unit circle
+- Understand the relationship between the unit circle, sine and cosine
+- Determine sine and cosine values for common angles
+- Work with angles in degrees and radians
+
+### 3.4 Trigonometric functions
+- Graph sine and cosine functions
+- Identify amplitude and period
+- Apply vertical and horizontal translations
+- Apply amplitude changes
+- Apply period changes
+- Apply phase shifts
+
+### 3.5 Radian measure
+- Convert between degrees and radians
+- Interpret angles expressed in radians
+- Apply radians in trigonometric calculations
+
+### 3.6 Circle theorems
+- Apply the angle-at-the-centre theorem
+- Apply angles-in-the-same-segment theorem
+- Apply the angle-in-a-semicircle theorem
+- Apply cyclic quadrilateral properties
+- Apply tangent properties
+- Apply the alternate segment theorem
+
+### [Extended] 3.7 Arc length and sector area
+- Calculate arc length
+- Calculate sector area
+- Apply arc length and sector area in contextual problems
+
+### [Extended] 3.8 Trigonometric equations
+- Solve simple sine equations
+- Solve simple cosine equations
+- Solve simple tangent equations
+- Find multiple solutions within a specified interval
+
+## Topic 4 — Statistics and probability
+### 4.1 Data collection and sampling
+- Distinguish between populations and samples
+- Apply random sampling
+- Apply stratified sampling
+- Apply systematic sampling
+- Identify biased sampling methods
+- Design and evaluate surveys
+- Consider ethical issues in data collection
+
+### 4.2 Scatter plots and correlation
+- Construct and interpret scatter plots
+- Identify positive, negative and no correlation
+- Distinguish between correlation and causation
+- Calculate and interpret Pearson’s correlation coefficient
+
+### 4.3 Linear models and prediction
+- Determine a linear model using estimation or technology
+- Use interpolation
+- Use extrapolation
+- Evaluate limitations of extrapolation
+
+### 4.4 Probability concepts
+- Calculate probabilities of single events
+- Calculate probabilities of compound events
+- Use tree diagrams
+- Use two-way tables
+- Distinguish between mutually exclusive events
+- Distinguish between independent and dependent events
+
+### 4.5 Conditional probability
+- Calculate conditional probabilities
+- Interpret conditional probability
+- Apply conditional probability using formulas, tree diagrams and two-way tables
+
+### [Extended] 4.6 Counting principles
+- Apply the fundamental counting principle
+- Use factorial notation
+- Calculate permutations
+- Calculate combinations
+- Select appropriate counting methods for contextual problems
+
+### [Extended] 4.7 Normal distribution
+- Understand the normal distribution
+- Use technology to calculate probabilities
+- Interpret areas under a normal curve
+- Use z-scores
+- Apply the normal distribution to contextual problems
+`;
+
+const MYP_STRANDS = ['Number', 'Algebra', 'Geometry & trigonometry', 'Statistics & probability'];
+
+/* Non-DP: High School Diploma Mathematics, Grades 11–12 (school proposal, September 2026), as supplied.
+   "# Grade 11 — …" sections become the levels Grade 11 / Grade 12; "[Optional Extension]" marks enrichment
+   topics (not a level) — see nonDpLibraryText(). */
+const NONDP_TEXT = String.raw`
+# High School Diploma Mathematics — Grades 11–12
+Quantitative Reasoning and Applied Mathematics
+Proposed curriculum based on the supplied Scheme of Work; subject to school approval and applicable requirements.
+[Optional Extension] identifies enrichment content, not a separate course level.
+
+# Grade 11 — Foundations of Applied Mathematics
+
+## Topic 1 — Core numeracy, proportional reasoning and algebra
+### 1.1 Number fluency and estimation
+- Use place value, negative numbers and the order of operations correctly
+- Round numbers and estimate calculations
+- Use a calculator accurately and check whether answers are reasonable in context
+
+### 1.2 Fractions, decimals and percentages
+- Convert between fractions, decimals and percentages
+- Use equivalent representations to solve practical problems
+
+### 1.3 Ratio, proportion and rates
+- Use ratio notation and solve ratio problems
+- Apply direct proportion in practical contexts
+- Calculate and interpret unit rates, including speed, cost per unit and earnings per hour
+
+### 1.4 Percentage change
+- Calculate percentage increases and decreases using multipliers
+- Apply percentages to discounts, tax, tips and service charges
+- Interpret percentage changes in context
+
+### 1.5 Algebraic expressions and linear equations
+- Use algebraic notation to represent practical situations
+- Simplify expressions by combining like terms
+- Solve one-step and two-step linear equations using inverse operations
+- Check solutions by substitution
+
+### 1.6 Substitution and formulae
+- Substitute values into practical formulae, including C = 2πr and A = πr²
+- Rearrange simple formulae, including d = rt, to change the subject
+- Use appropriate units and interpret calculated values
+
+### [Optional Extension] 1.7 Further percentages and formulae
+- Solve reverse percentage problems
+- Calculate successive percentage changes
+- Rearrange formulae requiring more than one step
+
+## Topic 2 — Financial mathematics I: personal finance
+### 2.1 Income, expenditure and budgeting
+- Create and interpret a personal budget
+- Distinguish between fixed and variable costs
+- Calculate disposable income and plan savings
+- Interpret payslips, bills and bank statements
+
+### 2.2 Prices and best-buy comparisons
+- Calculate final costs after discounts, tax and service charges
+- Compare prices using unit rates
+- Justify purchasing decisions using calculations and relevant conditions
+
+### 2.3 Currency conversion
+- Convert between currencies using a given exchange rate
+- Interpret the direction of an exchange rate correctly
+- Include relevant transaction or card fees when comparing costs
+
+### 2.4 Simple interest
+- Calculate simple interest using I = Prt
+- Express percentage interest rates as decimals and use consistent time units
+- Interpret the interest earned and the final balance
+
+### 2.5 Compound interest and savings
+- Calculate compound growth using A = P(1 + r)ⁿ in simple contexts
+- Use a calculator or spreadsheet to compare simple and compound interest
+- Compare savings options and justify a financial recommendation
+
+## Topic 3 — Data literacy and descriptive statistics
+### 3.1 Types of data and frequency tables
+- Distinguish between categorical and numerical data
+- Organise data in frequency tables
+- Choose suitable ways to present different types of data
+
+### 3.2 Charts and graphs
+- Construct and interpret bar charts, line graphs and pie charts
+- Use appropriate scales, labels and units
+- Identify misleading scales or presentations
+
+### 3.3 Measures of centre and spread
+- Calculate and interpret the mean, median, mode and range
+- Select suitable summary measures for a dataset
+- Use summary measures to describe data in context
+
+### 3.4 Scatter diagrams and correlation
+- Construct and interpret scatter diagrams
+- Describe the direction and strength of a relationship informally
+- Distinguish correlation from causation
+
+### 3.5 Statistical communication
+- Interpret numerical and graphical evidence
+- Write a short statistical conclusion supported by data
+- Explain limitations of the evidence and avoid unsupported claims
+
+## Topic 4 — Graphs, functions and real-life modelling
+### 4.1 Coordinates and graph reading
+- Plot and read points in the coordinate plane
+- Interpret graph scales, axes and units accurately
+- Connect points and graphs to the quantities they represent
+
+### 4.2 Gradient and intercepts
+- Calculate gradient using m = Δy/Δx
+- Interpret gradient as a rate of change
+- Identify intercepts and interpret the vertical intercept as an initial value
+
+### 4.3 Linear relationships
+- Draw and interpret straight-line graphs of the form y = mx + c
+- Form linear models for practical situations
+- Interpret the parameters of a linear model in context
+
+### 4.4 Distance-time and cost models
+- Interpret distance-time graphs and relate gradient to speed
+- Model taxi fares, subscriptions and other costs using fixed and variable charges
+- Use equations, tables and graphs to compare options
+
+### 4.5 Intersections and break-even points
+- Find intersections of simple graphs by hand or using technology
+- Interpret an intersection as equal values in context
+- Use intersections to compare plans and identify break-even points
+
+### 4.6 Model interpretation and limitations
+- Use a model to make predictions within a sensible range
+- Explain assumptions and limitations
+- Judge whether a prediction is reasonable in context
+
+### [Optional Extension] 4.7 Introduction to non-linear models
+- Recognise quadratic and exponential patterns visually
+- Compare their graphical behaviour with linear models in practical contexts
+
+## Topic 5 — Geometry, measurement and practical design
+### 5.1 Units and conversions
+- Convert between common units of length, area, volume and capacity
+- Use appropriate units in calculations and final answers
+- Estimate measurements and check their reasonableness
+
+### 5.2 Perimeter, area and circles
+- Calculate perimeter and area in practical contexts
+- Decompose compound shapes into simpler shapes
+- Calculate circle circumference using C = 2πr and area using A = πr²
+
+### 5.3 Surface area and volume
+- Calculate surface area and volume of simple solids using suitable formulae
+- Apply V = lwh to rectangular prisms
+- Interpret results in practical contexts such as packaging and storage
+
+### 5.4 Scale drawings, maps and plans
+- Interpret and use scale drawings
+- Calculate actual dimensions from maps and plans
+- Represent practical designs using an appropriate scale
+
+### 5.5 Practical design and constraints
+- Use measurements and calculations to complete a practical design task
+- Account for constraints such as space, materials and cost
+- Justify design choices and check whether quantities are reasonable
+
+### [Optional Extension] 5.6 Right-angled trigonometry
+- Use right-angled trigonometry in accessible measurement problems when prerequisite skills are secure
+
+## Topic 6 — Applied project and portfolio review
+### 6.1 Project question and planning
+- Identify a clear practical question or context for a guided investigation
+- Select relevant information and appropriate calculations
+- Organise a plan for completing the task
+
+### 6.2 Mathematical analysis and presentation
+- Show relevant calculations clearly, including units and financial values where appropriate
+- Include at least one table and at least one graph
+- Explain how the mathematics addresses the chosen question
+
+### 6.3 Conclusions and reflection
+- Write a conclusion supported by calculations
+- Reflect on assumptions and limitations
+- Present the project in a short report and presentation
+
+### 6.4 Portfolio review
+- Select evidence of progress in applied mathematics
+- Reflect on improvements and remaining learning needs
+- Discuss progress and next steps using portfolio evidence
+
+# Grade 12 — Applied Quantitative Reasoning
+
+## Topic 1 — Financial mathematics II: credit, loans and planning
+### 1.1 Compound growth and depreciation
+- Calculate compound growth using A = P(1 + r)ⁿ
+- Calculate depreciation using A = P(1 − r)ⁿ for a positive depreciation rate r
+- Interpret changes in value over time using calculations, tables or spreadsheets
+
+### 1.2 Inflation and purchasing power
+- Explain the relationship between inflation and purchasing power
+- Calculate the effect of repeated percentage increases on prices and budgets
+- Interpret financial values in the context of changing costs
+
+### 1.3 Savings and financial planning
+- Compare savings options using calculations and stated assumptions
+- Model savings over time using spreadsheets
+- Evaluate whether a savings plan meets a stated goal
+
+### 1.4 Credit, loans and repayments
+- Interpret borrowing costs and repayment information
+- Explain credit card interest and minimum repayments at an introductory level
+- Use spreadsheets to model balances, interest and repayments over time
+- Compare borrowing options using total costs and affordability
+
+### 1.5 Financial decisions and limitations
+- Compare renting and buying in a given scenario
+- Make a financial recommendation supported by calculations
+- State assumptions and explain limitations of a financial model
+
+## Topic 2 — Statistics, sampling, bias and media literacy
+### 2.1 Populations, samples and sampling methods
+- Distinguish between a population and a sample
+- Describe and compare sampling methods in accessible contexts
+- Identify sampling bias and limitations of a sample
+
+### 2.2 Questionnaire design and data quality
+- Design and evaluate survey questions
+- Identify leading or biased questions and rewrite them neutrally
+- Evaluate the reliability and validity of collected information
+
+### 2.3 Comparing datasets
+- Compare datasets using appropriate averages and measures of spread
+- Calculate and interpret median, quartiles and interquartile range
+- Explain why averages alone may not provide a complete comparison
+
+### 2.4 Grouped data and statistical displays
+- Organise and interpret grouped data
+- Interpret box plots and, where appropriate, histograms
+- Use graphical displays to compare distributions in context
+
+### 2.5 Statistical claims and media literacy
+- Critique statistical claims using the data and methods behind them
+- Identify misleading graphs and unsupported interpretations
+- Distinguish correlation from causation when evaluating claims
+- Write evidence-based conclusions that acknowledge limitations
+
+### [Optional Extension] 2.6 Standard deviation
+- Use technology to calculate standard deviation
+- Interpret standard deviation as a measure of spread when comparing datasets
+
+## Topic 3 — Probability, risk and decision-making
+### 3.1 Probability concepts and representations
+- Interpret the probability scale from 0 to 1
+- Express probability as a fraction, decimal and percentage
+- Calculate probabilities of simple events and their complements
+
+### 3.2 Theoretical and experimental probability
+- Calculate theoretical probabilities in simple contexts
+- Use experimental results to estimate probabilities
+- Compare theoretical probabilities with observed relative frequencies
+
+### 3.3 Combined events and tree diagrams
+- Distinguish between independent and dependent events
+- Use tree diagrams to represent simple multi-stage situations
+- Calculate probabilities of combined events using appropriate addition and multiplication
+- Check whether independence is reasonable in the given context
+
+### 3.4 Expected value and fair games
+- Calculate expected value using E = Σx p(x) for a small set of possible outcomes
+- Distinguish an expected long-run average from a guaranteed outcome
+- Include participation costs when calculating expected net returns
+- Judge whether a game or offer is mathematically fair
+
+### 3.5 Risk and reward
+- Compare options using probabilities and possible outcomes
+- Explain risk and uncertainty in context
+- Justify decisions using expected value and other relevant considerations
+
+## Topic 4 — Modelling with spreadsheets and technology
+### 4.1 Spreadsheet formulae and tables
+- Construct tables using spreadsheet formulae
+- Use cell references and fill-down methods correctly
+- Check spreadsheet formulae and outputs for errors
+
+### 4.2 Linear models
+- Model constant rates of change using y = mx + c
+- Generate tables and graphs for practical linear models
+- Interpret initial values and rates of change in context
+
+### 4.3 Percentage growth models
+- Model percentage growth using A = P(1 + r)ⁿ
+- Use repeated spreadsheet calculations for savings scenarios with deposits
+- Interpret growth models and compare them with linear growth
+
+### 4.4 Graphs, trend lines and predictions
+- Create labelled graphs from spreadsheet data
+- Use technology to display simple trend lines
+- Make predictions and distinguish interpolation from extrapolation
+- Explain risks of extrapolating beyond the available data
+
+### 4.5 Evaluating and communicating models
+- Compare predicted values with actual data
+- Identify assumptions and limitations
+- Explain whether a model is suitable for its intended purpose
+- Present results clearly to a non-specialist audience
+
+## Topic 5 — Capstone applied mathematics project
+### 5.1 Research question and proposal
+- Formulate a focused research question or decision problem
+- Prepare a proposal with a feasible plan and suitable mathematical methods
+- Define the context and purpose of the investigation
+
+### 5.2 Data collection and source selection
+- Collect relevant data or select a credible dataset
+- Explain the source and method of data collection
+- Consider data quality and limitations
+
+### 5.3 Mathematical analysis
+- Apply at least two appropriate mathematical techniques
+- Show calculations clearly and accurately
+- Use labelled tables and graphs to present findings
+- Use technology appropriately and check outputs
+
+### 5.4 Interpretation and recommendation
+- Interpret results in relation to the original question
+- Discuss assumptions, limitations and possible improvements
+- Make a final recommendation or conclusion supported by evidence
+
+### 5.5 Report, presentation and revision
+- Organise the investigation into a clear written report
+- Use feedback to revise the analysis and communication
+- Give a short presentation explaining the mathematics and findings
+- Reflect on the investigation and learning process
+
+## Topic 6 — Portfolio, presentation and transition review
+### 6.1 Selecting evidence of learning
+- Select financial mathematics, statistics and modelling tasks that demonstrate progress
+- Include the capstone project, student reflection and a summary of teacher feedback
+- Organise the portfolio clearly and professionally
+
+### 6.2 Reflection and future development
+- Explain how mathematical skills have been applied in real contexts
+- Identify strengths and areas for further development
+- Use evidence to describe progress in accuracy, confidence and independence
+
+### 6.3 Final presentation
+- Present selected work clearly and professionally
+- Explain mathematical decisions using calculations, graphs and contextual reasoning
+- Connect learning to further study, work and everyday decision-making
+`;
+// The supplied document → the library's text format: each "# Grade N — …" section becomes the level "Grade N"
+// (its units are titled "Grade N · Topic …" and its topics tagged [Grade N]); the title block before it is skipped.
+function nonDpLibraryText(text) {
+  let grade = '';
+  return text.split(/\r?\n/).map(line => {
+    const s = line.trim();
+    const g = s.match(/^#\s+(Grade\s+\d+)\b/);
+    if (g) { grade = g[1]; return ''; }
+    if (!grade) return ''; // document title and notes
+    if (/^##(?!#)/.test(s)) return `## ${grade} · ${s.replace(/^##\s*/, '')}`;
+    if (/^###/.test(s)) {
+      let t = s.replace(/^###\s*/, ''), ext = false;
+      if (/^\[Optional Extension\]\s*/i.test(t)) { t = t.replace(/^\[Optional Extension\]\s*/i, ''); ext = true; }
+      return `### [${grade}] ${t}${ext ? ' (optional extension)' : ''}`;
+    }
+    return line;
+  }).join('\n');
+}
+
+// Library text → units with deterministic ids (myp9-u1, myp9-1-3, myp9-1-3-o2), so lessons, generator links
+// and course units stay linked across updates.
+// prefix(topic) separates topics whose codes repeat across levels (Non-DP: nondp-g11-1-1, nondp-g12-1-1).
+function buildUnitsFromText(cid, text, tracks, prefix = () => '') {
+  return parseCurriculumText(text, tracks).map((u, ui) => ({
+    ...u, id: `${cid}-u${ui + 1}`,
+    topics: u.topics.map((t, ti) => {
+      const tid = `${cid}-${prefix(t)}${t.code ? t.code.replace(/\./g, '-') : `u${ui + 1}t${ti + 1}`}`;
+      return { ...t, id: tid, outcomes: t.outcomes.map((o, oi) => ({ ...o, id: `${tid}-o${oi + 1}` })) };
     }),
   }));
 }
@@ -351,46 +982,61 @@ function buildUnits(cid, units) {
 function builtinCurricula() {
   const source = 'IB Mathematics guide, first assessment 2021 (outcomes paraphrased)';
   return [
-    { id: 'myp8', name: 'MYP Mathematics — Grade 8', short: 'MYP 8', programme: 'MYP', tracks: [], units: [] },
-    { id: 'myp9', name: 'MYP Mathematics — Grade 9 (MYP Year 4)', short: 'MYP 9', programme: 'MYP', tracks: ['Standard', 'Extended'], builtin: true, source: 'ISL Grade 9 Math Syllabus (updated)', units: buildMypUnits('myp9', G9_UNITS) },
-    { id: 'myp10', name: 'MYP Mathematics — Grade 10', short: 'MYP 10', programme: 'MYP', tracks: ['Standard', 'Extended'], units: [] },
-    { id: 'dp-aa', name: 'DP Mathematics: Analysis and Approaches', short: 'DP AA', programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-aa', AA_UNITS) },
-    { id: 'dp-ai', name: 'DP Mathematics: Applications and Interpretation', short: 'DP AI', programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-ai', AI_UNITS) },
+    { id: 'myp8', name: CANONICAL_NAMES.myp8.name, short: 'MYP 8', programme: 'MYP', tracks: [], units: [] },
+    { id: 'myp9', name: CANONICAL_NAMES.myp9.name, short: 'MYP 9', programme: 'MYP', tracks: ['Standard', 'Extended'], builtin: true, source: 'ISL MYP 9 curriculum (September 2026)', units: buildUnitsFromText('myp9', MYP9_TEXT, ['Standard', 'Extended']) },
+    { id: 'myp10', name: CANONICAL_NAMES.myp10.name, short: 'MYP 10', programme: 'MYP', tracks: ['Standard', 'Extended'], builtin: true, source: 'ISL MYP 10 curriculum (September 2026)', units: buildUnitsFromText('myp10', MYP10_TEXT, ['Standard', 'Extended']) },
+    { id: 'nondp', name: CANONICAL_NAMES.nondp.name, short: CANONICAL_NAMES.nondp.short, programme: 'Other', tracks: ['Grade 11', 'Grade 12'], builtin: true,
+      source: 'High School Diploma Mathematics, Grades 11–12 — proposed curriculum based on the Scheme of Work; subject to school approval',
+      units: buildUnitsFromText('nondp', nonDpLibraryText(NONDP_TEXT), ['Grade 11', 'Grade 12'], t => (t.tracks[0] ? `g${t.tracks[0].replace(/\D/g, '')}-` : '')) },
+    { id: 'dp-aa', name: CANONICAL_NAMES['dp-aa'].name, short: CANONICAL_NAMES['dp-aa'].short, programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-aa', AA_UNITS) },
+    { id: 'dp-ai', name: CANONICAL_NAMES['dp-ai'].name, short: CANONICAL_NAMES['dp-ai'].short, programme: 'DP', tracks: ['SL', 'HL'], builtin: true, source, units: buildUnits('dp-ai', AI_UNITS) },
   ];
 }
 
 /* ---------- state & lookup helpers ---------- */
+// Updated school curricula replace the saved version once (then your later edits are kept).
+const CURRICULUM_UPDATES = { myp9: '2026-09', myp10: '2026-09', nondp: '2026-09' };
 function ensureCurricula() {
   const S = App.state;
   if (!Array.isArray(S.curricula)) { S.curricula = builtinCurricula(); App.save(true); }
-  // New built-in content (e.g. the Grade 9 syllabus) fills curricula that are still empty; never overwrites your edits.
+  S.curriculumVersions = S.curriculumVersions || {};
+  // New built-in content fills curricula that are still empty; an update listed above replaces it once.
   let changed = false;
   builtinCurricula().forEach(b => {
     const cur = S.curricula.find(c => c.id === b.id);
+    const update = CURRICULUM_UPDATES[b.id] && S.curriculumVersions[b.id] !== CURRICULUM_UPDATES[b.id];
+    if (update) S.curriculumVersions[b.id] = CURRICULUM_UPDATES[b.id];
     if (!cur) { if (b.builtin) { S.curricula.push(b); changed = true; } return; }
+    if (update) {
+      Object.assign(cur, { units: b.units, builtin: true, source: b.source, name: b.name, tracks: b.tracks });
+      changed = true;
+      return;
+    }
     if (b.builtin && !cur.units.length && b.units.length) {
       Object.assign(cur, { units: b.units, builtin: true, source: b.source, name: b.name, tracks: cur.tracks.length ? cur.tracks : b.tracks });
       changed = true;
     }
   });
-  if (changed) App.save(true);
+  if (changed) { syncCourseUnits(S); App.save(true); }
   S.classLevels = S.classLevels || {};
   return S.curricula;
 }
 function curriculum(id) { return (App.state.curricula || []).find(c => c.id === id); }
 function inTrack(item, track) { return !track || !item.tracks?.length || item.tracks.includes(track); }
 
-// Every selectable level, e.g. "MYP 9 · Extended", "DP AA · HL".
+// Every selectable level, e.g. "MYP 9 Extended", "DP AA HL" (the same naming as the courses, e.g. "DP AI SL").
 function curriculumLevels() {
   return (App.state.curricula || []).flatMap(c => c.tracks.length
-    ? c.tracks.map(t => ({ key: `${c.id}|${t}`, cid: c.id, track: t, label: `${c.short} · ${t}`, c }))
+    ? c.tracks.map(t => ({ key: `${c.id}|${t}`, cid: c.id, track: t, label: `${c.short} ${t}`, c }))
     : [{ key: c.id, cid: c.id, track: '', label: c.short, c }]);
 }
 function parseLevel(key) {
   const [cid, track = ''] = String(key || '').split('|');
   return { cid, track, c: curriculum(cid) };
 }
-function levelLabel(key) { const { c, track } = parseLevel(key); return c ? (track ? `${c.short} · ${track}` : c.short) : ''; }
+function levelLabel(key) { const { c, track } = parseLevel(key); return c ? (track ? `${c.short} ${track}` : c.short) : ''; }
+// Full name of a level: "DP Mathematics: Applications and Interpretation SL", "MYP Mathematics — Grade 9 (MYP Year 4) Extended"
+function levelName(c, track) { return c ? `${c.name}${track ? ` ${track}` : ''}` : ''; }
 function levelTopics(key) {
   const { c, track } = parseLevel(key);
   if (!c) return [];
@@ -425,7 +1071,19 @@ function coverageMark(cov) {
 }
 
 // Curriculum id → course id used by lesson plans (for colours and filters).
-function courseForCurriculum(cid) { return { myp8: 'myp8', myp9: 'myp9', 'dp-ai': 'dpaisl' }[cid] || ''; }
+// The course that takes its units from this curriculum level (exact level first, then any level of the curriculum).
+function courseForCurriculum(cid, track = '') {
+  const cs = App.state.courses || [];
+  const exact = cs.find(c => c.curriculumLevel === (track ? `${cid}|${track}` : cid));
+  return (exact || cs.find(c => (c.curriculumLevel || '').split('|')[0] === cid))?.id || '';
+}
+// The curriculum level a course follows, as a selectable key ("myp9" becomes "myp9|Standard" when the curriculum has levels).
+function levelForCourse(courseId) {
+  const lv = App.course(courseId)?.curriculumLevel || '';
+  const { c, track } = parseLevel(lv);
+  if (!c) return '';
+  return track || !c.tracks.length ? lv : `${c.id}|${c.tracks[0]}`;
+}
 
 /* ---------- import / export as plain text ----------
    ## Unit title

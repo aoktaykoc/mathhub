@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curriculum alignment · MathHub</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="alignment">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Curriculum alignment</h1>
+        <p class="muted">MYP 8 → MYP 9 → MYP 10 → DP: what repeats, what is missing, and how each pathway prepares students for AA and AI.</p>
+      </div>
+      <div class="topbar-actions no-print"><a class="btn btn-primary" href="alignment-poster.html" target="_blank" rel="noopener">A3 poster</a><button class="btn btn-ghost" id="printBtn">Print</button></div>
+    </header>
+    <main class="content al-page">
+      <section class="card" id="pathways">
+        <div class="card-head"><div><h2>Pathways</h2><p class="muted small" id="asOf"></p></div></div>
+        <div id="pathwayDiagram"></div>
+        <div class="al-legend">
+          <span><span class="badge tone-success">R</span> Repeat — the MYP pathway already teaches it; review in DP</span>
+          <span><span class="badge tone-info">P</span> Partly — MYP lays the foundation; DP extends it</span>
+          <span><span class="badge tone-neutral">N</span> New in DP</span>
+          <span><span class="al-gap-mark">!</span> Gap — prior knowledge DP expects that no MYP grade teaches</span>
+          <span><span class="al-ext">E</span> MYP Extended topic</span>
+        </div>
+      </section>
+
+      <section class="al-kpis" id="kpis"></section>
+
+      <section class="card" id="findings">
+        <div class="card-head"><h2>Key findings</h2></div>
+        <ol class="al-findings" id="findingList"></ol>
+      </section>
+
+      <section class="card" id="heat">
+        <div class="card-head"><div><h2>Topics per strand and stage</h2><p class="muted small">Number of topics in each strand. MYP Extended and DP HL columns include the Standard / SL topics.</p></div></div>
+        <div class="table-wrap" id="heatmap"></div>
+      </section>
+
+      <section class="card" id="gaps">
+        <div class="card-head"><div><h2>Gaps: what DP expects that MYP does not teach</h2><p class="muted small">Sorted by priority, with a suggested place in the MYP curriculum.</p></div></div>
+        <div class="table-wrap" id="gapTable"></div>
+      </section>
+
+      <section class="card" id="coverage">
+        <div class="card-head"><div><h2>DP coverage map</h2><p class="muted small">Every DP topic with the MYP topics that prepare it, for the pathway that leads to the course (Standard → SL, Extended → HL).</p></div></div>
+        <div class="tabs" role="tablist" id="courseTabs"></div>
+        <div class="al-filters" id="statusFilter"></div>
+        <div id="coverageMap"></div>
+      </section>
+
+      <section class="card" id="repeats">
+        <div class="card-head"><div><h2>MYP topics that DP teaches again</h2><p class="muted small">For each MYP topic: the DP topics that repeat it (bold) or build on it. Use this to shorten DP teaching time or to plan quick reviews.</p></div></div>
+        <div class="tabs" role="tablist" id="gradeTabs"></div>
+        <div class="table-wrap" id="repeatTable"></div>
+      </section>
+
+      <section class="card" id="placement">
+        <div class="card-head"><div><h2>Standard / Extended placement check</h2><p class="muted small">MYP topics whose level does not match the DP level that needs them.</p></div></div>
+        <div class="table-wrap" id="placementTable"></div>
+      </section>
+
+      <section class="card" id="spiral">
+        <div class="card-head"><div><h2>Repetition inside MYP 8 → 9 → 10</h2><p class="muted small">A healthy spiral deepens a topic; a duplicate teaches the same outcomes again.</p></div></div>
+        <div class="table-wrap" id="spiralTable"></div>
+      </section>
+
+      <section class="card" id="myponly">
+        <div class="card-head"><div><h2>MYP content that DP does not continue</h2><p class="muted small">Still valuable for MYP criteria and eAssessment — but no DP course builds on it.</p></div></div>
+        <ul class="al-list" id="mypOnlyList"></ul>
+      </section>
+
+      <section class="card" id="recs">
+        <div class="card-head"><h2>Recommendations by stage</h2></div>
+        <div class="al-recs" id="recList"></div>
+      </section>
+
+      <section class="card al-method">
+        <h2 style="margin-bottom:.4rem">How this was made</h2>
+        <p class="small muted">Every DP topic in AA and AI (SL and AHL) was compared, outcome by outcome, with the MYP 8, MYP 9 and MYP 10 curricula in the Curriculum library (September 2026). A topic is <strong>R</strong> when the pathway already teaches its main outcomes, <strong>P</strong> when it teaches prerequisites or an introduction, and <strong>N</strong> otherwise. SL courses are checked against the Standard pathway (MYP 9 S → MYP 10 S), HL courses against the Extended pathway. DP outcome wording is paraphrased from the IB guides, so check borderline cases against your copy of the guide and discuss them with the department.</p>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/curricula.js"></script>
+<script src="assets/js/alignment-data.js"></script>
+<script src="assets/js/alignment-calc.js"></script>
+<script src="assets/js/alignment.js"></script>
+</body>
+</html>

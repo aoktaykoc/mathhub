@@ -83,6 +83,7 @@
                 ${t.lessons ? `<span class="small muted">${t.lessons} lesson${t.lessons > 1 ? 's' : ''}</span>` : ''}
                 <span class="grow"></span>
                 <a class="btn btn-sm btn-soft" href="builder.html?topic=${encodeURIComponent(t.id)}${track ? `&track=${encodeURIComponent(track)}` : ''}">Build lesson</a>
+                ${topicGenerators(t).length || WsAI.enabledFor(c) ? `<a class="btn btn-sm btn-ghost" href="worksheets.html?topic=${encodeURIComponent(t.id)}${track ? `&level=${encodeURIComponent(`${c.id}|${track}`)}` : ''}" title="Practice questions for this topic">Worksheet</a>` : ''}
                 <button class="btn btn-sm btn-ghost" data-edit-topic="${t.id}">Edit</button>
               </div>
               <ul class="lib-outcomes">${tOuts.map(o => `<li>${coverageMark(cov[o.id])}<span>${esc(o.text)}${o.lessons ? ` <span class="small faint">(${o.lessons} lesson${o.lessons > 1 ? 's' : ''})</span>` : ''}</span> ${trackBadge(o, c)}</li>`).join('') || '<li class="muted small">No outcomes yet.</li>'}</ul>

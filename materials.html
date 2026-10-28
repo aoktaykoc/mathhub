@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Material library · MathHub</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body data-page="materials">
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="topbar-title">
+        <h1>Material library</h1>
+        <p class="muted">Search your own worksheets, slides, lesson packs and plans by meaning. Everything is read and indexed in this browser — nothing is uploaded.</p>
+      </div>
+    </header>
+    <main class="content mat-page">
+      <section class="card mat-search">
+        <form id="searchForm" class="mat-searchbar" role="search">
+          <input id="q" type="search" placeholder="e.g. worksheet on negative exponents · real-life geometric sequences · exit ticket for Pythagoras" aria-label="Search your materials" autocomplete="off">
+          <button class="btn btn-primary" type="submit">Search</button>
+        </form>
+        <div class="mat-filters" id="filters"></div>
+        <p class="small muted" id="searchInfo"></p>
+        <div id="results"></div>
+      </section>
+
+      <section class="card" id="sources">
+        <div class="card-head"><div><h2>Sources</h2><p class="muted small" id="statsLine"></p></div>
+          <button class="btn btn-sm btn-ghost" id="clearIdx">Clear index</button></div>
+        <div class="mat-sources">
+          <div class="mat-src">
+            <div><strong>📁 A folder on this computer</strong><div class="small muted" id="folderInfo"></div>
+              <div class="small muted">PDF, PowerPoint, Word, LaTeX, Markdown and text files, in all subfolders (site files, backups and images are skipped). Only new or changed files are read again.</div></div>
+            <div class="mat-src-actions"><button class="btn btn-sm btn-ghost" id="chooseFolder">Choose folder…</button><button class="btn btn-sm btn-primary" id="indexFolder">Update index</button></div>
+          </div>
+          <div class="mat-src">
+            <div><strong>🗂️ Saved in MathHub</strong><div class="small muted" id="browserInfo"></div>
+              <div class="small muted">Lesson plans, files saved with AI content studio results, and saved worksheets.</div></div>
+            <div class="mat-src-actions"><button class="btn btn-sm btn-primary" id="indexBrowser">Update index</button></div>
+          </div>
+        </div>
+        <div class="mat-progress" id="progress" hidden><div class="mat-bar"><span id="progressBar"></span></div><span class="small" id="progressText"></span></div>
+        <p class="small muted" style="margin:.8rem 0 0">The first time, the browser downloads a small language model (about 23 MB) that turns text into meaning vectors; after that it works offline. The Worksheet generator and AI content studio can add excerpts from these materials to Claude prompts.</p>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/matindex.js"></script>
+<script src="assets/js/materials.js"></script>
+</body>
+</html>

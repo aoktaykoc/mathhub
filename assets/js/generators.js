@@ -569,3 +569,45 @@ const GENERATORS = [
     },
   },
 ];
+
+/* ---------- curriculum library → generators ----------
+   Built-in topics are linked explicitly (missing or [] = no generator yet); topics in your own or
+   imported curricula are matched on their title. */
+const TOPIC_GENERATORS = {
+  // MYP 9 (ISL MYP 9 curriculum, September 2026)
+  'myp9-1-3': ['indices'], 'myp9-1-4': ['expand-single', 'expand-double', 'factorise'], 'myp9-1-5': ['linear-eq'], 'myp9-1-6': ['inequalities'], 'myp9-1-7': ['simultaneous'],
+  'myp9-2-3': ['substitution'], 'myp9-2-4': ['gradient'], 'myp9-2-5': ['quadratic-eq'], 'myp9-2-6': ['expand-double'],
+  'myp9-3-3': ['pythagoras'], 'myp9-3-6': ['volume', 'circles'], 'myp9-3-7': ['trig'], 'myp9-3-8': ['pythagoras', 'trig'],
+  'myp9-4-4': ['statistics'], 'myp9-4-6': ['probability'], 'myp9-4-8': ['probability'],
+  // MYP 10 (ISL MYP 10 curriculum, September 2026)
+  'myp10-1-1': ['quadratic-eq'], 'myp10-1-2': ['expand-double', 'factorise'], 'myp10-1-6': ['arithmetic-seq', 'geometric-seq'],
+  'myp10-3-2': ['trig'], 'myp10-4-4': ['probability'],
+  // DP Analysis and Approaches
+  'dp-aa-1-1': ['standard-form'], 'dp-aa-1-2': ['arithmetic-seq'], 'dp-aa-1-3': ['geometric-seq'], 'dp-aa-1-4': ['finance'], 'dp-aa-1-5': ['indices'], 'dp-aa-1-7': ['indices'],
+  'dp-aa-1-16': [], 'dp-aa-2-1': ['gradient'], 'dp-aa-2-6': ['expand-double', 'factorise'], 'dp-aa-2-7': ['quadratic-eq'], 'dp-aa-2-15': [],
+  'dp-aa-3-1': ['volume'], 'dp-aa-3-2': ['trig'], 'dp-aa-4-3': ['statistics'], 'dp-aa-4-5': ['probability'], 'dp-aa-4-6': ['probability'],
+  'dp-aa-5-3': ['differentiation'], 'dp-aa-5-4': ['differentiation'], 'dp-aa-5-8': ['differentiation'],
+  // DP Applications and Interpretation
+  'dp-ai-1-1': ['standard-form'], 'dp-ai-1-2': ['arithmetic-seq'], 'dp-ai-1-3': ['geometric-seq'], 'dp-ai-1-4': ['finance'], 'dp-ai-1-5': ['indices'],
+  'dp-ai-1-6': ['percent-error', 'rounding'], 'dp-ai-1-10': ['indices'], 'dp-ai-2-1': ['gradient'], 'dp-ai-3-1': ['volume'], 'dp-ai-3-2': ['trig'],
+  'dp-ai-4-3': ['statistics'], 'dp-ai-4-5': ['probability'], 'dp-ai-4-6': ['probability'],
+  'dp-ai-5-3': ['differentiation'], 'dp-ai-5-4': ['differentiation'], 'dp-ai-5-6': ['differentiation'],
+};
+const TOPIC_KEYWORDS = [
+  // (?!…) leaves topics the generator does not really cover to Claude: the converse, real-world contexts, cylinders only
+  [/^(?!.*converse).*pythag/i, ['pythagoras']], [/trigonometr|sohcahtoa/i, ['trig']], [/simultaneous|systems? of (linear )?equations|systems? by (substitution|elimination)/i, ['simultaneous']],
+  [/quadratic/i, ['quadratic-eq']], [/factoris|factoriz/i, ['factorise']], [/expand|brackets|algebraic expressions/i, ['expand-single', 'expand-double']],
+  [/^(?!.*real[- ]world).*(standard form|scientific notation)/i, ['standard-form']], [/indices|index laws|exponent|\bpowers\b/i, ['indices']],
+  [/arithmetic seq/i, ['arithmetic-seq']], [/geometric seq/i, ['geometric-seq']], [/percentage change/i, ['percent-change']], [/percent/i, ['percentages']],
+  [/\bratios?\b/i, ['ratio']], [/fraction/i, ['fractions']], [/integer|directed number/i, ['integers']], [/probabilit/i, ['probability']],
+  [/average|mean|median|central tendency|dispersion|spread/i, ['statistics']], [/circle/i, ['circles']], [/^(?!.*cylinder).*(volume|surface area)/i, ['volume']],
+  [/differentiat|derivative|tangent|stationary/i, ['differentiation']], [/interest|financ|depreciation/i, ['finance']],
+  [/rounding|significant fig|decimal place/i, ['rounding']], [/approximation|percentage error/i, ['percent-error']], [/inequalit/i, ['inequalities']],
+  [/^(?!.*y\s*=\s*m).*(linear equation|solving equations|variables on both sides)/i, ['linear-eq']], [/straight line|gradient|slope|linear function|y\s*=\s*m/i, ['gradient']], [/^(?!.*system).*(substitut|evaluat)/i, ['substitution']],
+];
+// Generators for a curriculum topic ({ id, title }), in order, without duplicates.
+function topicGenerators(topic) {
+  const builtin = /^(myp9|myp10|dp-aa|dp-ai)-/.test(topic.id);
+  const ids = TOPIC_GENERATORS[topic.id] ?? (builtin ? [] : null) ?? [...new Set(TOPIC_KEYWORDS.filter(([re]) => re.test(topic.title)).flatMap(([, g]) => g))];
+  return ids.map(id => GENERATORS.find(g => g.id === id)).filter(Boolean);
+}

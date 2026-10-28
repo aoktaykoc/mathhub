@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Assessment hub · MathHub</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <meta name="theme-color" content="#3b5bdb">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css">
   <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
@@ -22,6 +20,8 @@
       </div>
       <div class="topbar-actions">
         <button class="btn btn-ghost" id="teachersBtn">Teachers</button>
+        <button class="btn btn-ghost" id="calendarBtn" title="Import the school's assessment calendar (.xlsx)">Import calendar</button>
+        <input type="file" id="calendarFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
         <button class="btn btn-ghost" id="importBtn">Import submissions</button>
         <input type="file" id="importFile" accept=".json,application/json" multiple hidden>
         <button class="btn btn-primary" id="newReq">+ Request assessment</button>
@@ -38,10 +38,16 @@
           <option value="formative">Formative</option>
           <option value="summative">Summative</option>
         </select>
+        <select id="sortBy" aria-label="Sort">
+          <option value="date">Sort: exam date</option>
+          <option value="group">Sort: group</option>
+          <option value="teacher">Sort: teacher</option>
+          <option value="status">Sort: status</option>
+        </select>
       </div>
       <div class="table-wrap" style="margin-bottom:1.2rem">
-        <table class="table">
-          <thead><tr><th>Assessment</th><th>Teacher</th><th>Course</th><th>Type</th><th>Draft due</th><th>Sat on</th><th>Status</th></tr></thead>
+        <table class="table a-table">
+          <thead><tr><th>Group / course</th><th>Assessment</th><th>Teacher</th><th>Type</th><th>Draft due</th><th>Sat on</th><th>Status</th><th>Toddle name</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -51,7 +57,8 @@
           <div id="overview"></div>
         </section>
         <section class="card">
-          <div class="card-head"><div><h2>Assessment calendar</h2><p class="muted small">Next 8 weeks. Flags weeks where one course has more than one summative</p></div></div>
+          <div class="card-head"><div><h2>Assessment calendar</h2><p class="muted small">When students sit each assessment and when drafts are due. Flags weeks where one group has two summatives</p></div>
+            <select id="calRange" aria-label="Calendar range" style="width:auto"><option value="8">Next 8 weeks</option><option value="term" selected>This term</option><option value="all">All dates</option></select></div>
           <div id="calendar"></div>
         </section>
       </div>
@@ -69,6 +76,7 @@
   </div>
 </div>
 <script src="assets/js/core.js"></script>
+<script src="assets/js/curricula.js"></script>
 <script src="assets/js/assessments.js"></script>
 </body>
 </html>

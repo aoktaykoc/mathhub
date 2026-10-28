@@ -53,33 +53,8 @@
     $$('#ttWeekTabs .tab').forEach(t => t.classList.toggle('active', Number(t.dataset.ttweek) === ttWeek));
     if (!cycleOn()) { $('#cycleInfo').innerHTML = '<span class="muted">Off: the same timetable repeats every week.</span>'; return; }
     const now = weekStart(isoDate());
-    $('#cycleInfo').innerHTML = `The week of <strong>${esc(fmtDate(now, { day: 'numeric', month: 'short' }))}</strong> is ${badge(cycleLabel(now), cycleTone(now))} · the week of ${esc(fmtDate(addDays(now, 7), { day: 'numeric', month: 'short' }))} is ${badge(cycleLabel(addDays(now, 7)), cycleTone(addDays(now, 7)))}`;
+    $('#cycleInfo').innerHTML = `The week of <strong>${esc(fmtDate(now, { day: 'numeric', month: 'short' }))}</strong> is ${badge(cycleLabel(now), cycleWeekOf(now) === 1 ? 'info' : 'warning')} · the week of ${esc(fmtDate(addDays(now, 7), { day: 'numeric', month: 'short' }))} is ${badge(cycleLabel(addDays(now, 7)), cycleWeekOf(addDays(now, 7)) === 1 ? 'info' : 'warning')}`;
   }
-
-  /* ---------- holidays (skipped by the cycle) ---------- */
-  S.holidays = S.holidays || [];
-  function renderHolidays() {
-    const list = [...S.holidays].sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-    $('#holidayList').innerHTML = list.length ? list.map(h => `<div class="form-row" style="align-items:flex-end" data-hol="${h.id}">
-        <label style="flex:1 1 200px">Name<input data-f="name" value="${esc(h.name || '')}" placeholder="Holiday"></label>
-        <label style="flex:0 1 170px">From<input type="date" data-f="start" value="${esc(h.start || '')}"></label>
-        <label style="flex:0 1 170px">To<input type="date" data-f="end" value="${esc(h.end || '')}"></label>
-        <button class="btn btn-sm btn-ghost" data-del-hol style="flex:0">Remove</button>
-      </div>`).join('') : '<p class="muted small" style="margin:0">No holidays yet.</p>';
-  }
-  $('#addHoliday').onclick = () => { S.holidays.push({ id: uid('hol'), name: '', start: '', end: '' }); save(); renderHolidays(); };
-  $('#holidayList').addEventListener('change', e => {
-    const row = e.target.closest('[data-hol]'); if (!row || !e.target.dataset.f) return;
-    const h = S.holidays.find(x => x.id === row.dataset.hol); if (!h) return;
-    h[e.target.dataset.f] = e.target.value.trim();
-    if (h.start && h.end && h.end < h.start) [h.start, h.end] = [h.end, h.start];
-    save(); renderHolidays(); renderCycle();
-  });
-  $('#holidayList').addEventListener('click', e => {
-    const row = e.target.closest('[data-del-hol]')?.closest('[data-hol]'); if (!row) return;
-    S.holidays = S.holidays.filter(x => x.id !== row.dataset.hol); save(); renderHolidays(); renderCycle();
-  });
-  renderHolidays();
   $('#cycleOn').addEventListener('change', e => {
     S.cycle.enabled = e.target.checked;
     if (S.cycle.enabled && !S.cycle.anchor) S.cycle.anchor = weekStart(isoDate());
@@ -191,15 +166,56 @@
   };
 
   /* ---------- classes ---------- */
+  // Class order is S.classes order (menus and lists follow it): drag the ⋮⋮ handle, or use ↑ ↓.
+  function moveClass(id, to) {
+    const from = S.classes.findIndex(c => c.id === id);
+    if (from < 0 || to < 0 || to >= S.classes.length || to === from) return;
+    const [c] = S.classes.splice(from, 1);
+    S.classes.splice(to, 0, c);
+    save(); renderClasses(); renderTT();
+  }
   function renderClasses() {
-    $('#classList').innerHTML = S.classes.map(c => `<div class="row-item" data-id="${c.id}">
+    const last = S.classes.length - 1;
+    $('#classList').innerHTML = S.classes.map((c, i) => `<div class="row-item" data-id="${c.id}">
+      <span class="drag-handle" draggable="true" title="Drag to reorder" aria-hidden="true">⋮⋮</span>
       <input type="color" data-k="color" value="${esc(colorFor(c.id))}" aria-label="Colour for ${esc(c.name)}" title="Class colour" class="class-color">
       <input data-k="name" value="${esc(c.name)}" aria-label="Class name">
       <input data-k="room" value="${esc(c.room || '')}" placeholder="Usual room, e.g. B204" aria-label="Usual room" style="flex:0 1 150px">
       <select data-k="courseId" aria-label="Course">${courseOptions(c.courseId)}</select>
       <select data-k="scheduleId" aria-label="Division">${S.schedules.map(s => `<option value="${s.id}" ${s.id === c.scheduleId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+      <button class="icon-btn sm" data-move="-1" aria-label="Move ${esc(c.name)} up" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button class="icon-btn sm" data-move="1" aria-label="Move ${esc(c.name)} down" title="Move down" ${i === last ? 'disabled' : ''}>↓</button>
       <button class="icon-btn sm" data-rm aria-label="Remove class">×</button></div>`).join('') || '<p class="muted small">No classes yet.</p>';
   }
+  // drag and drop by the handle; the drop line shows above or below the row under the pointer
+  let dragId = null;
+  const clearDrop = () => $$('#classList .row-item').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+  $('#classList').addEventListener('dragstart', e => {
+    const h = e.target.closest?.('.drag-handle'); if (!h) return;
+    const row = h.closest('[data-id]');
+    dragId = row.dataset.id;
+    e.dataTransfer.setData('text/plain', dragId); e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setDragImage(row, 20, row.offsetHeight / 2);
+    row.classList.add('dragging');
+  });
+  $('#classList').addEventListener('dragover', e => {
+    const row = e.target.closest('[data-id]'); if (!row || !dragId) return;
+    e.preventDefault();
+    const r = row.getBoundingClientRect();
+    clearDrop();
+    row.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-after' : 'drop-before');
+  });
+  $('#classList').addEventListener('drop', e => {
+    const row = e.target.closest('[data-id]'); if (!row || !dragId) return;
+    e.preventDefault();
+    const after = row.classList.contains('drop-after');
+    const from = S.classes.findIndex(c => c.id === dragId);
+    let to = S.classes.findIndex(c => c.id === row.dataset.id) + (after ? 1 : 0);
+    if (from < to) to--;
+    const id = dragId; dragId = null;
+    moveClass(id, to);
+  });
+  $('#classList').addEventListener('dragend', () => { dragId = null; clearDrop(); $$('#classList .dragging').forEach(r => r.classList.remove('dragging')); });
   $('#classList').addEventListener('change', e => {
     const row = e.target.closest('[data-id]'); if (!row) return;
     const c = App.cls(row.dataset.id);
@@ -210,6 +226,8 @@
     if (k === 'room') toast(v ? `${c.name}: room ${v}` : `${c.name}: room cleared`, 'success');
   });
   $('#classList').addEventListener('click', e => {
+    const mv = e.target.closest('[data-move]');
+    if (mv) { const id = mv.closest('[data-id]').dataset.id; moveClass(id, S.classes.findIndex(c => c.id === id) + Number(mv.dataset.move)); return; }
     if (!e.target.closest('[data-rm]')) return;
     const id = e.target.closest('[data-id]').dataset.id;
     confirmModal('Remove this class? It will also be removed from your timetable.', () => {

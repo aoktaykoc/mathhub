@@ -177,7 +177,7 @@ function seedCourses() {
       ],
     },
     {
-      id: 'dpaisl', name: 'DP Mathematics: Applications & Interpretation SL', short: 'AI SL', framework: 'DP', color: '#8b5cf6',
+      id: 'dpaisl', name: 'DP Mathematics: Applications and Interpretation SL', short: 'AI SL', framework: 'DP', color: '#8b5cf6',
       units: [
         u('Topic 1 — Number & algebra', { hours: 16, syllabusRef: 'SL 1.1–1.8' },
           ['Scientific notation & approximation', 'Arithmetic sequences & series', 'Geometric sequences & series', 'Financial applications (compound interest, annuities, loans)', 'Exponents & logarithms', 'Approximation & percentage error']),
@@ -244,13 +244,6 @@ function colorFor(classId, courseId) {
   return cls?.color || App.course(cls?.courseId || courseId)?.color || '#98a2b3';
 }
 
-function defaultHolidays() {
-  return [
-    { id: uid('hol'), name: 'Winter break', start: '2026-12-20', end: '2026-12-31' },
-    { id: uid('hol'), name: 'Spring break', start: '2027-02-28', end: '2027-03-11' },
-    { id: uid('hol'), name: 'May holiday', start: '2027-05-16', end: '2027-05-20' },
-  ];
-}
 function seedState() {
   const today = isoDate();
   return {
@@ -261,7 +254,7 @@ function seedState() {
     classes: [
       { id: 'cls-myp8', name: 'MYP 8', courseId: 'myp8', scheduleId: 'ms', color: CLASS_COLORS[0] },
       { id: 'cls-myp9', name: 'MYP 9', courseId: 'myp9', scheduleId: 'hs', color: CLASS_COLORS[1] },
-      { id: 'cls-dp', name: 'DP AI SL', courseId: 'dpaisl', scheduleId: 'hs', color: CLASS_COLORS[2] },
+      { id: 'cls-dp', name: 'AI SL', courseId: 'dpaisl', scheduleId: 'hs', color: CLASS_COLORS[2] },
       { id: 'cls-nondp', name: 'Non-DP', courseId: 'nondp', scheduleId: 'hs', color: CLASS_COLORS[3] },
     ],
     workWeek: 'sun-thu',
@@ -270,7 +263,6 @@ function seedState() {
     variantNames: { ...DEFAULT_VARIANT_NAMES },
     timetable: {}, // "[w2:]<day>|<divisionId>:<label>" → classId
     cycle: { enabled: false, anchor: '' },
-    holidays: defaultHolidays(), // { id, name, start, end } — weeks fully inside are skipped by the cycle
     rooms: {}, // same keys as timetable → room for that period (overrides the class default)
     events: [], // { id, title, date, start, end, location, repeat, days, until, skip, color, notes }
     aiResults: [], // { id, lessonId, templateId, templateName, result, createdAt } — answers pasted back from Claude
@@ -278,7 +270,7 @@ function seedState() {
     tasks: [
       { id: uid('task'), text: 'Enter my timetable in Settings', done: false, due: today, priority: 'high' },
       { id: uid('task'), text: 'Ask the department to share this term’s formative & summative drafts', done: false, due: addDays(today, 3), priority: 'normal' },
-      { id: uid('task'), text: 'Review the DP AI SL IA timeline', done: false, due: '', priority: 'normal' },
+      { id: uid('task'), text: 'Review the AI SL IA timeline', done: false, due: '', priority: 'normal' },
     ],
     notes: {},
     teachers: [],
@@ -289,6 +281,115 @@ function seedState() {
       'Written feedback returned', 'Final IA submitted', 'Internal standardisation / moderation', 'Marks & samples uploaded',
     ].map(label => ({ id: uid('ms'), label, date: '', done: false })),
   };
+}
+
+/* ---------- one name per course and curriculum across the site ----------
+   Tags and menus use the short name; a curriculum level adds its track after a space
+   ("MYP 9 Extended", "AI SL", "AA HL"), the same way the AI SL course is named. */
+const CANONICAL_NAMES = {
+  myp8: { name: 'MYP Mathematics — Grade 8 (MYP Year 3)', short: 'MYP 8' },
+  myp9: { name: 'MYP Mathematics — Grade 9 (MYP Year 4)', short: 'MYP 9' },
+  myp10: { name: 'MYP Mathematics — Grade 10 (MYP Year 5)', short: 'MYP 10' },
+  'dp-aa': { name: 'DP Mathematics: Analysis and Approaches', short: 'AA' },
+  'dp-ai': { name: 'DP Mathematics: Applications and Interpretation', short: 'AI' },
+  dpaisl: { name: 'DP Mathematics: Applications and Interpretation SL', short: 'AI SL' },
+  dpaihl: { name: 'DP Mathematics: Applications and Interpretation HL', short: 'AI HL' },
+  dpaasl: { name: 'DP Mathematics: Analysis and Approaches SL', short: 'AA SL' },
+  dpaahl: { name: 'DP Mathematics: Analysis and Approaches HL', short: 'AA HL' },
+  nondp: { name: 'Non-DP Mathematics — Quantitative Reasoning and Applied Mathematics', short: 'Non-DP' },
+};
+// Earlier built-in names; they are renamed on load. Names you typed yourself are kept.
+const OLD_NAMES = new Set(['MYP Mathematics — Grade 8', 'MYP Mathematics — Grade 9', 'MYP Mathematics — Grade 10',
+  'DP Mathematics: Applications & Interpretation SL', 'DP AI SL', 'DP AI', 'DP AA', 'Non-DP Mathematics (school curriculum)']);
+function applyCanonicalNames(list) {
+  (list || []).forEach(x => {
+    const n = CANONICAL_NAMES[x.id];
+    if (!n) return;
+    if (OLD_NAMES.has(x.name)) x.name = n.name;
+    if (OLD_NAMES.has(x.short)) x.short = n.short;
+  });
+}
+
+/* ---------- course units come from the Curriculum library ----------
+   A course linked to a library level (course.curriculumLevel, e.g. "dp-ai|SL") takes its units and topics
+   from the library; the course keeps its own planning: status, weeks, concepts, SOI, notes, covered topics. */
+const DEFAULT_COURSE_LEVELS = { myp8: 'myp8', myp9: 'myp9', myp10: 'myp10', dpaisl: 'dp-ai|SL', dpaihl: 'dp-ai|HL', dpaasl: 'dp-aa|SL', dpaahl: 'dp-aa|HL', nondp: 'nondp' };
+// Existing courses linked once to a library curriculum added later (Non-DP: both grades); unlinking afterwards is kept.
+const LATER_LINKS = ['nondp'];
+// Courses added once for library levels that had no course (MYP 10, AI HL, AA SL, AA HL); deleting one later is respected.
+const COURSE_ORDER = ['myp8', 'myp9', 'myp10', 'dpaisl', 'dpaihl', 'dpaasl', 'dpaahl'];
+// A course already covers a level when it follows that level, or — for a level without a track such as "myp10" —
+// any level of the same curriculum ("myp10|Extended"). AA SL and AA HL stay separate courses.
+function sameLevelFamily(courseLevel, level) {
+  if (!courseLevel || !level) return false;
+  return courseLevel === level || (!level.includes('|') && courseLevel.split('|')[0] === level);
+}
+function addLibraryCourses(s) {
+  // an MYP 10 course added automatically next to one you made yourself, and not used anywhere, is removed again
+  const mine = (s.courses || []).find(c => c.id !== 'myp10' && sameLevelFamily(c.curriculumLevel, 'myp10'));
+  const auto = (s.courses || []).find(c => c.id === 'myp10');
+  const used = id => (s.classes || []).some(x => x.courseId === id) || (s.lessons || []).some(x => x.courseId === id) || (s.assessments || []).some(x => x.courseId === id);
+  if (mine && auto && !used('myp10')) s.courses = s.courses.filter(c => c !== auto);
+  s.linkedCourses = s.linkedCourses || [];
+  LATER_LINKS.forEach(id => {
+    if (s.linkedCourses.includes(id)) return;
+    s.linkedCourses.push(id);
+    const c = (s.courses || []).find(x => x.id === id);
+    if (c && !c.curriculumLevel) c.curriculumLevel = DEFAULT_COURSE_LEVELS[id];
+  });
+  s.addedCourses = s.addedCourses || [];
+  [['myp10', '#0891b2', 'MYP'], ['dpaihl', '#6d28d9', 'DP'], ['dpaasl', '#db2777', 'DP'], ['dpaahl', '#9f1239', 'DP']].forEach(([id, color, framework]) => {
+    if (s.addedCourses.includes(id)) return;
+    s.addedCourses.push(id);
+    if ((s.courses || []).some(c => c.id === id || sameLevelFamily(c.curriculumLevel, DEFAULT_COURSE_LEVELS[id]))) return;
+    // place it after the nearest course before it in COURSE_ORDER (MYP 8, 9, 10, AI SL, AI HL, AA SL, AA HL)
+    const prev = COURSE_ORDER.slice(0, COURSE_ORDER.indexOf(id)).reverse().find(p => s.courses.some(c => c.id === p));
+    const at = prev ? s.courses.findIndex(c => c.id === prev) : -1;
+    s.courses.splice(at >= 0 ? at + 1 : s.courses.length, 0, { id, ...CANONICAL_NAMES[id], framework, color, units: [], curriculumLevel: DEFAULT_COURSE_LEVELS[id] });
+  });
+}
+function criteriaFrom(text) { // "Criteria A and D (possibly B and C)" → ['A', 'D']
+  const m = String(text || '').split('(')[0].match(/Criteri(?:a|on)\s+([A-D](?:[\s,/&]+(?:and\s+|or\s+)?[A-D])*)/i);
+  return m ? [...new Set(m[1].match(/[A-D]/g))] : [];
+}
+function courseLibrary(s, course) { // → { cur, track } when the course follows a library level that has units
+  if (!course?.curriculumLevel) return null;
+  const [cid, track = ''] = course.curriculumLevel.split('|');
+  const cur = (s.curricula || []).find(c => c.id === cid);
+  return cur && cur.units?.length ? { cur, track } : null;
+}
+function syncCourseUnits(s) {
+  (s.courses || []).forEach(course => {
+    if (course.curriculumLevel === undefined) course.curriculumLevel = DEFAULT_COURSE_LEVELS[course.id] || '';
+    const lib = courseLibrary(s, course);
+    if (!lib) return; // not linked, or nothing in the library yet: the course keeps its own units
+    const { cur, track } = lib;
+    const inT = x => !track || !x.tracks?.length || x.tracks.includes(track);
+    const old = new Map(course.units.map(u => [u.id, u]));
+    course.units = cur.units.map(lu => {
+      const topics = lu.topics.filter(inT);
+      // mark level-only topics ("(Extended)") unless the whole unit belongs to that level (Non-DP "Grade 11 · …" units)
+      const oneLevel = new Set(topics.map(t => (t.tracks || []).join('/'))).size === 1;
+      const onlySome = t => !track && !oneLevel && t.tracks?.length && t.tracks.length < cur.tracks.length ? ` (${t.tracks.join(' / ')})` : '';
+      if (!topics.length) return null;
+      const prev = old.get(lu.id), done = new Map((prev?.topics || []).map(t => [t.id, t.done]));
+      const hours = lu.hours && typeof lu.hours === 'object' ? (track ? lu.hours[track] ?? '' : '') : (lu.hours ?? '');
+      const [a, b] = [topics[0].code || '', topics[topics.length - 1].code || ''];
+      const ref = cur.programme === 'DP' && a ? `${a}–${a.split(' ')[0] === b.split(' ')[0] ? b.replace(/^\D+\s*/, '') : b}` : ''; // "SL 1.1–1.9", "SL 1.1–AHL 1.16"
+      const base = prev || makeUnit(lu.title, { criteria: criteriaFrom(lu.assessment), notes: lu.assessment ? `Possible assessment: ${lu.assessment}` : '' });
+      return {
+        ...base, id: lu.id, title: lu.title, weeks: lu.weeks || base.weeks || '', hours: hours || base.hours || '', syllabusRef: ref || base.syllabusRef || '',
+        topics: topics.map(t => ({ id: t.id, text: `${t.code ? `${t.code} ` : ''}${t.title}${onlySome(t)}`, done: !!done.get(t.id) })),
+      };
+    }).filter(Boolean);
+    // lesson plans: link to the unit holding their curriculum topic; drop links to units that no longer exist
+    const ids = new Set(course.units.map(u => u.id));
+    (s.lessons || []).filter(l => l.courseId === course.id).forEach(l => {
+      if (l.unitId && ids.has(l.unitId)) return;
+      const u = l.curriculum?.topicId && course.units.find(x => x.topics.some(t => t.id === l.curriculum.topicId));
+      if (u) l.unitId = u.id; else if (l.unitId) l.unitId = '';
+    });
+  });
 }
 
 /* ---------- store ---------- */
@@ -310,10 +411,10 @@ const App = {
     }
     (s.classes || []).forEach(c => { if (!c.scheduleId) c.scheduleId = c.courseId === 'myp8' ? 'ms' : (s.schedules[1] || s.schedules[0])?.id || ''; });
     (s.classes || []).forEach(c => { if (!c.color) c.color = nextClassColor(s.classes); });
-    if (!s.holidays) { // holidays added: 1–5 Nov 2026 starts Week 1, holiday weeks no longer count
-      s.holidays = defaultHolidays();
-      s.cycle = { enabled: false, ...s.cycle, anchor: '2026-11-01' };
-    }
+    applyCanonicalNames(s.courses);
+    applyCanonicalNames(s.curricula);
+    addLibraryCourses(s);
+    syncCourseUnits(s);
     const fresh = seedState();
     for (const k of Object.keys(fresh)) if (s[k] === undefined) s[k] = fresh[k];
     this.state = s;
@@ -348,39 +449,22 @@ function periodsOn(date) {
   }))).sort((a, b) => a.start.localeCompare(b.start) || a.schedId.localeCompare(b.schedId));
 }
 /* Two-week cycle: Week 1 timetable keys are "<day>|<period>", Week 2 keys are "w2:<day>|<period>".
-   `cycle.anchor` is any date in a Week 1; school weeks then alternate from there.
-   Holiday weeks (every school day inside a holiday) are skipped, so the cycle resumes where it left off. */
+   `cycle.anchor` is any date in a Week 1; weeks then alternate from there. */
 function cycleOn() { return !!(App.state.cycle?.enabled && App.state.cycle.anchor); }
-function holidayOn(date) { return (App.state.holidays || []).find(h => h.start && h.end && date >= h.start && date <= h.end) || null; }
-function isHolidayWeek(date) {
-  const ws = weekStart(date);
-  return workDays().every((_, i) => holidayOn(addDays(ws, i)));
-}
 function cycleWeekOf(date) {
   if (!cycleOn()) return 1;
-  const a = weekStart(App.state.cycle.anchor), w = weekStart(date);
-  let [from, to] = a <= w ? [a, w] : [w, a], weeks = 0;
-  for (let d = from; d < to; d = addDays(d, 7)) if (!isHolidayWeek(d)) weeks++;
-  return weeks % 2 === 0 ? 1 : 2;
-}
-// Start of the school week n school weeks after (or before, n < 0) the week containing date, skipping holiday weeks.
-function addSchoolWeeks(date, n) {
-  let d = weekStart(date);
-  const step = n < 0 ? -7 : 7;
-  for (let i = 0; i < Math.abs(n); i++) { d = addDays(d, step); while (isHolidayWeek(d)) d = addDays(d, step); }
-  return d;
+  const weeks = Math.round(daysBetween(weekStart(App.state.cycle.anchor), weekStart(date)) / 7);
+  return ((weeks % 2) + 2) % 2 === 0 ? 1 : 2;
 }
 function ttPrefix(week) { return week === 2 ? 'w2:' : ''; }
 function ttKey(date, periodId) { return `${ttPrefix(cycleWeekOf(date))}${weekdayKey(date)}|${periodId}`; }
-// No classes are taught on holiday days.
-function classAt(date, periodId) { return holidayOn(date) ? '' : App.state.timetable[ttKey(date, periodId)] || ''; }
+function classAt(date, periodId) { return App.state.timetable[ttKey(date, periodId)] || ''; }
 // Room for a period: the room typed in that timetable cell, otherwise the class's default room.
 function roomAt(date, periodId) {
   const k = ttKey(date, periodId);
   return App.state.rooms?.[k] || App.cls(App.state.timetable[k])?.room || '';
 }
-function cycleLabel(date) { return cycleOn() ? (isHolidayWeek(date) ? 'Holiday' : `Week ${cycleWeekOf(date)}`) : ''; }
-function cycleTone(date) { return isHolidayWeek(date) ? 'success' : cycleWeekOf(date) === 1 ? 'info' : 'warning'; }
+function cycleLabel(date) { return cycleOn() ? `Week ${cycleWeekOf(date)}` : ''; }
 
 // Periods on this date with the class taught in each ('' when free).
 function slotsOn(date) {
@@ -422,6 +506,8 @@ const ICONS = {
   sheet: '<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h8"/>',
   check: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>',
+  route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/>',
   compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   save: '<path d="M5 3h11l5 5v13H5z"/><path d="M8 3v6h8M8 21v-7h8v7"/>',
@@ -560,7 +646,8 @@ const FileStore = {
 async function openStoredFile(meta, forceDownload = false) {
   let blob;
   try { blob = await FileStore.get(meta.id); } catch (e) { blob = null; }
-  if (!blob) { toast(`“${meta.name}” is not in this browser’s storage (it may have been saved on another computer or browser).`, 'error'); return; }
+  if (!blob) blob = await LessonFolder.read(meta); // e.g. on another computer: read the copy in the synced lesson folder
+  if (!blob) return;
   const ext = meta.name.split('.').pop().toLowerCase();
   const textLike = ['tex', 'md', 'txt', 'csv', 'json', 'sty', 'bib'].includes(ext);
   const viewable = textLike || /^(application\/pdf|image\/)/.test(blob.type) || ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext);
@@ -625,7 +712,7 @@ document.addEventListener('click', e => {
 /* ---------- AI content studio: shared by ai.html and the lesson editor ---------- */
 // Values a template can use as {{name}}.
 const AI_PLACEHOLDERS = {
-  topic: 'Lesson topic', class: 'Class name', level: 'Curriculum level (e.g. DP AA · HL)', unit: 'Unit / strand',
+  topic: 'Lesson topic', class: 'Class name', level: 'Curriculum level (e.g. AA HL)', unit: 'Unit / strand',
   code: 'Topic code (e.g. SL 2.6)', duration: 'Duration in minutes', date: 'Lesson date', outcomes: 'Learning outcomes (bulleted)',
   outline: 'Current lesson outline', extra: 'Extra instructions typed on this page',
   lessons: 'Number of lessons', prior: 'Prior knowledge / diagnostic gaps', homework: 'Available homework time',
@@ -806,6 +893,37 @@ const LessonFolder = {
       f.savedPath = target; written++;
     }
     return { written, path: `${root.name}/${path}` };
+  },
+  // Reads a lesson file from the lesson folder when it is not in this browser (another computer or browser).
+  // Asks for the folder once; the file is then kept in this browser so it opens straight away next time.
+  async read(meta) {
+    const missing = `“${meta.name}” is not in this browser’s storage`;
+    if (!this.supported()) { toast(`${missing}. Open it from your lesson folder, or use Chrome or Edge to open it from here.`, 'error'); return null; }
+    const res = (App.state.aiResults || []).find(r => (r.files || []).some(f => f.id === meta.id));
+    const l = res && App.state.lessons.find(x => x.id === res.lessonId);
+    const paths = [meta.savedPath, l && [...lessonFolderParts(l), meta.name].join('/')].filter(Boolean);
+    if (!paths.length) { toast(`${missing} and was never saved in a lesson folder.`, 'error'); return null; }
+    let root = await this.handle();
+    if (!root) {
+      toast(`${missing} — choose your lesson folder (the one that contains the Grade folders)`);
+      root = await this.pick();
+      if (!root) return null;
+    }
+    let perm = await root.queryPermission({ mode: 'read' });
+    if (perm === 'prompt') { try { perm = await root.requestPermission({ mode: 'read' }); } catch (e) { /* needs a click */ } }
+    if (perm !== 'granted') { toast('Allow access to the lesson folder when the browser asks, then click the file again', 'error'); return null; }
+    for (const path of paths) {
+      try {
+        const parts = path.split('/');
+        let dir = root;
+        for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+        const file = await (await dir.getFileHandle(parts[parts.length - 1])).getFile();
+        try { await FileStore.put(meta.id, file); } catch (e) { /* storage full — still open it */ }
+        return file;
+      } catch (e) { /* try the next path */ }
+    }
+    toast(`Could not find “${paths[0]}” in the folder “${root.name}”. If that is the wrong folder, use “Change folder” in a lesson’s AI panel.`, 'error');
+    return null;
   },
 };
 function folderLineHtml() {
@@ -1335,7 +1453,7 @@ function loadSampleData() {
   const S = App.state;
   const today = isoDate();
   const start = weekStart(today);
-  [['cls-myp8', 'MYP 8', 'myp8', 'ms'], ['cls-myp9', 'MYP 9', 'myp9', 'hs'], ['cls-dp', 'DP AI SL', 'dpaisl', 'hs'], ['cls-nondp', 'Non-DP', 'nondp', 'hs']].forEach(([id, name, courseId, scheduleId]) => {
+  [['cls-myp8', 'MYP 8', 'myp8', 'ms'], ['cls-myp9', 'MYP 9', 'myp9', 'hs'], ['cls-dp', 'AI SL', 'dpaisl', 'hs'], ['cls-nondp', 'Non-DP', 'nondp', 'hs']].forEach(([id, name, courseId, scheduleId]) => {
     if (!App.cls(id) && App.course(courseId)) S.classes.push({ id, name, courseId, scheduleId, color: nextClassColor(S.classes) });
   });
   // Middle School and High School periods chosen so they never overlap in time
@@ -1454,12 +1572,14 @@ function renderSidebar() {
       { id: 'curriculum', href: 'curriculum.html', label: 'Curriculum library', icon: 'library' },
       { id: 'courses', href: 'courses.html', label: 'Courses & units', icon: 'layers' },
       { id: 'worksheets', href: 'worksheets.html', label: 'Worksheet generator', icon: 'sheet' },
+      { id: 'materials', href: 'materials.html', label: 'Material library', icon: 'search' },
     ] },
     { title: 'Subject lead', items: [
       { id: 'assessments', href: 'assessments.html', label: 'Assessment hub', icon: 'check', count: reviewCount },
       { id: 'submit', href: 'submit.html', label: 'Teacher submission form', icon: 'send' },
     ] },
     { title: 'Reference', items: [
+      { id: 'alignment', href: 'alignment.html', label: 'Curriculum alignment', icon: 'route' },
       { id: 'toolkit', href: 'toolkit.html', label: 'IB toolkit', icon: 'compass' },
       { id: 'settings', href: 'settings.html', label: 'Settings & backup', icon: 'gear' },
     ] },

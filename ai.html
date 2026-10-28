@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI content studio · MathHub</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <meta name="theme-color" content="#3b5bdb">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css">
   <script>try{var t=localStorage.getItem("mathhub.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
@@ -56,6 +54,8 @@
             <textarea id="promptOut" rows="14" readonly aria-label="Prompt to send to Claude"></textarea>
             <div class="form-row" style="margin-top:.7rem;align-items:center">
               <span class="small muted" id="promptInfo"></span>
+              <label class="inline small" title="Adds the best-matching passages from your Material library, so Claude matches your level, notation and style"><input type="checkbox" id="matCtx"> Add excerpts from my materials</label>
+              <span class="small muted" id="matInfo"></span>
               <span class="grow"></span>
               <button class="btn btn-ghost" id="copyPrompt" style="flex:0">Copy prompt</button>
               <button class="btn btn-primary" id="copyOpen" style="flex:0">Copy &amp; open Claude</button>
@@ -113,6 +113,7 @@
 <script src="assets/js/core.js"></script>
 <script src="assets/js/curricula.js"></script>
 <script src="assets/js/prompts.js"></script>
+<script src="assets/js/matindex.js"></script>
 <script src="assets/js/ai.js"></script>
 </body>
 </html>
